@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>WR OS — Мобильная операционная система</title>
+    
+    <!-- PWA meta-теги для iOS (добавление на главный экран) -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="WR OS">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%234c9aff'/%3E%3Ctext x='50' y='68' font-size='50' text-anchor='middle' fill='white' font-weight='bold'%3EWR%3C/text%3E%3C/svg%3E">
+    
+    <!-- PWA манифест (встроенный) -->
+    <link rel="manifest" href="data:application/manifest+json,{
+        %22name%22:%22WR%20OS%22,
+        %22short_name%22:%22WR%20OS%22,
+        %22start_url%22:%22.%22,
+        %22display%22:%22standalone%22,
+        %22theme_color%22:%22%234c9aff%22,
+        %22background_color%22:%22%230f0f0f%22,
+        %22icons%22:[{
+            %22src%22:%22data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%234c9aff'/%3E%3Ctext x='50' y='68' font-size='50' text-anchor='middle' fill='white' font-weight='bold'%3EWR%3C/text%3E%3C/svg%3E%22,
+            %22sizes%22:%22100x100%22,
+            %22type%22:%22image/svg+xml%22
+        }]
+    }">
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
+        body { background: #1a1c1e; display: flex; justify-content: center; align-items: center; min-height: 100vh; font-family: 'Segoe UI', Roboto, system-ui, sans-serif; }
+        .phone { width: 380px; height: 700px; background: #0f0f0f; border-radius: 40px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.8); overflow: hidden; display: flex; flex-direction: column; transition: background 0.3s; position: relative; }
+        .status-bar { padding: 12px 20px; display: flex; justify-content: space-between; font-size: 14px; font-weight: 500; color: white; background: transparent; z-index: 20; text-shadow: 0 1px 2px rgba(0,0,0,0.3); }
+        .screen { flex: 1; overflow-y: auto; padding: 16px 12px; scrollbar-width: thin; }
+        .app-view { background: rgba(18,18,18,0.95); backdrop-filter: blur(10px); border-radius: 20px; padding: 16px; animation: slideUp 0.25s ease; min-height: 100%; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideDown { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(30px); } }
+        .app-exit { animation: slideDown 0.2s forwards; }
+        .app-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px 12px; text-align: center; margin-bottom: 30px; }
+        .app-icon { cursor: pointer; transition: transform 0.15s; position: relative; }
+        .app-icon:active { transform: scale(0.92); }
+        .delete-btn-overlay { position: absolute; top: -8px; right: -8px; background: #ff3b30; color: white; border-radius: 20px; width: 22px; height: 22px; font-size: 14px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10; font-weight: bold; }
+        .icon-circle { width: 60px; height: 60px; margin: 0 auto 8px; border-radius: 24px; display: flex; align-items: center; justify-content: center; font-size: 32px; background: rgba(44,47,51,0.8); backdrop-filter: blur(4px); }
+        .app-name { font-size: 12px; color: #eee; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
+        .app-header { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; border-bottom: 1px solid #333; padding-bottom: 12px; }
+        .back-btn { background: #2c2f33; border: none; color: white; font-size: 20px; width: 40px; height: 40px; border-radius: 30px; cursor: pointer; }
+        .back-btn:active { background: #3e4248; }
+        .navbar { background: rgba(15,15,15,0.95); padding: 8px 24px 14px; display: flex; justify-content: space-between; border-top: 1px solid #2a2a2a; backdrop-filter: blur(10px); }
+        .nav-btn { background: none; border: none; color: #aaa; font-size: 22px; cursor: pointer; padding: 6px 12px; border-radius: 30px; }
+        .nav-btn:active { background: #2a2a2a; }
+        button { background: none; border: none; color: white; }
+        h3 { color: white; margin-bottom: 12px; }
+        p, li { color: #ccc; }
+        .dark-card { background: rgba(30,31,34,0.9); backdrop-filter: blur(8px); padding: 14px; border-radius: 20px; margin: 12px 0; }
+        input, textarea { background: #2c2f33; border: none; color: white; padding: 10px; border-radius: 16px; width: 100%; margin: 8px 0; }
+        .wallpaper-option { display: inline-block; width: 70px; height: 70px; border-radius: 16px; margin: 6px; cursor: pointer; border: 2px solid transparent; transition: transform 0.1s; }
+        .wallpaper-option.selected { border-color: #4c9aff; transform: scale(1.05); }
+        .store-tabs { display: flex; gap: 12px; margin-bottom: 16px; border-bottom: 1px solid #333; }
+        .store-tab { padding: 8px 20px; cursor: pointer; border-radius: 20px 20px 0 0; }
+        .store-tab.active { background: #4c9aff; color: white; }
+        .store-app { background: rgba(44,47,51,0.9); border-radius: 20px; padding: 12px; margin: 10px 0; display: flex; justify-content: space-between; align-items: center; }
+        .install-btn { background: #4c9aff; padding: 8px 16px; border-radius: 20px; font-size: 12px; cursor: pointer; }
+        .uninstall-mode-hint { background: rgba(0,0,0,0.8); position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); padding: 8px 16px; border-radius: 30px; font-size: 12px; z-index: 100; pointer-events: none; color: white; }
+        .notification-shade { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 100; backdrop-filter: blur(4px); transition: transform 0.3s; transform: translateY(-100%); }
+        .notification-shade.open { transform: translateY(0); }
+        .shade-content { background: rgba(20,22,27,0.98); margin-top: 50px; border-radius: 30px 30px 0 0; padding: 20px; height: 70%; overflow-y: auto; }
+        .quick-settings { display: grid; grid-template-columns: repeat(3,1fr); gap: 15px; text-align: center; padding: 15px; background: rgba(44,47,51,0.5); border-radius: 25px; margin-bottom: 20px; }
+        .qs-icon { cursor: pointer; padding: 10px; border-radius: 20px; }
+        .qs-icon:active { background: #3a3f46; }
+        .notification-item { background: rgba(44,47,51,0.6); border-radius: 18px; padding: 12px; margin: 8px 0; }
+        .close-shade { position: absolute; top: 10px; right: 20px; font-size: 28px; cursor: pointer; color: white; }
+        .game-canvas { background: #000; display: block; margin: 0 auto; border-radius: 12px; }
+        .game-controls { display: flex; justify-content: center; gap: 15px; margin-top: 15px; flex-wrap: wrap; }
+        .game-btn { background: #3a3f46; padding: 10px 20px; border-radius: 30px; cursor: pointer; }
+        .open-app-btn { background: #4c9aff; padding: 14px; border-radius: 30px; text-align: center; font-weight: bold; margin: 12px 0; cursor: pointer; width: 100%; font-size: 16px; }
+        .install-pwa-hint { background: #2a5f3a; padding: 10px; border-radius: 16px; text-align: center; font-size: 12px; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+    </style>
+</head>
+<body>
+<div class="phone" id="phoneContainer">
+    <div class="status-bar"><span id="datetime">--:--</span><span id="battery">🔋 --%</span></div>
+    <div class="screen" id="screen"></div>
+    <div class="navbar"><button class="nav-btn" id="homeBtn">🏠</button><button class="nav-btn" id="backBtn">◀</button><button class="nav-btn" id="notifyBtn">🔔</button></div>
+    <div class="notification-shade" id="shade"><div class="shade-content"><span class="close-shade" id="closeShade">✕</span><h3>Панель управления</h3><div class="quick-settings"><div class="qs-icon" onclick="toggleWiFi()">📶 WiFi<br><span id="wifiStatus">Вкл</span></div><div class="qs-icon" onclick="toggleBluetooth()">🎵 Bluetooth<br><span id="btStatus">Вкл</span></div><div class="qs-icon" onclick="toggleFlashlight()">🔦 Фонарик<br><span id="flashStatus">Выкл</span></div></div><h4>Уведомления</h4><div id="notificationsList"><div class="notification-item">📱 WR OS v6.0<br>Можно добавить на главный экран!</div></div></div></div>
+</div>
+
+<script>
+    // ========== PWA УСТАНОВКА ==========
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        addNotification('📲 Установите WR OS на главный экран!');
+        const hint = document.createElement('div');
+        hint.className = 'install-pwa-hint';
+        hint.innerHTML = '📲 Нажмите "Установить" в браузере, чтобы добавить WR OS на главный экран <button class="install-btn" onclick="installPWA()" style="margin-left:8px;">Установить</button>';
+        if(document.querySelector('.app-grid')) document.querySelector('.app-grid').before(hint);
+    });
+    window.installPWA = () => {
+        if(deferredPrompt) {
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then(() => { deferredPrompt = null; });
+        } else {
+            addNotification('🍏 На iOS: нажмите "Поделиться" → "На экран «Домой»"');
+        }
+    };
+
+    // ========== Глобальное состояние ==========
+    let wallpaper = localStorage.getItem('wr_wallpaper') || 'dark';
+    let customWallpaper = localStorage.getItem('wr_custom_wallpaper') || '';
+    let installedApps = new Set(JSON.parse(localStorage.getItem('wr_installed') || '["telegram","zvuk","google","gmail","googlemaps","duolingo","github","figma","canva","notion","zoom","spotify","netflix","calculator","weather","tetris","snake"]'));
+    let webApps = JSON.parse(localStorage.getItem('wr_webapps') || '[]');
+    let notes = localStorage.getItem('wr_notes') || '';
+    let activityStack = [];
+    let isClosing = false;
+    let uninstallMode = false;
+    let wifiOn = true, bluetoothOn = true, flashOn = false;
+
+    const screenDiv = document.getElementById('screen');
+    const phoneDiv = document.getElementById('phoneContainer');
+    const shade = document.getElementById('shade');
+
+    // Время и батарея
+    function updateDateTime() {
+        const now = new Date();
+        const mskOffset = 3 * 60;
+        const localOffset = now.getTimezoneOffset();
+        const mskTime = new Date(now.getTime() + (mskOffset + localOffset) * 60000);
+        document.getElementById('datetime').innerHTML = `${mskTime.getDate().toString().padStart(2,'0')}.${(mskTime.getMonth()+1).toString().padStart(2,'0')} ${mskTime.getHours().toString().padStart(2,'0')}:${mskTime.getMinutes().toString().padStart(2,'0')}`;
+    }
+    function updateBattery() {
+        if ('getBattery' in navigator) navigator.getBattery().then(b => { document.getElementById('battery').innerHTML = `${b.charging?'⚡':'🔋'} ${Math.round(b.level*100)}%`; }).catch(()=>{ document.getElementById('battery').innerHTML='🔋 84%'; });
+        else document.getElementById('battery').innerHTML='🔋 76%';
+    }
+    setInterval(updateDateTime, 1000); updateDateTime(); updateBattery();
+
+    // Обои
+    function applyWallpaper() {
+        if (customWallpaper) phoneDiv.style.background = `url(${customWallpaper}) center/cover no-repeat`;
+        else { const g = { dark:'#0f0f0f', gradient:'linear-gradient(145deg,#1a1f2e,#0a0c12)', nature:'#2a5f3a', space:'#0b0b2b', sunset:'linear-gradient(145deg,#ff7e5e,#feb47b)', ocean:'linear-gradient(145deg,#1e3c72,#2a5298)', cherry:'linear-gradient(145deg,#ff9a9e,#fad0c4)', forest:'linear-gradient(145deg,#134e5e,#71b280)', midnight:'linear-gradient(145deg,#0f2027,#203a43,#2c5364)', lavender:'linear-gradient(145deg,#c06c84,#6c5b7b)' };
+            phoneDiv.style.background = g[wallpaper] || g.dark;
+        }
+    }
+    window.setWallpaper = function(w) { wallpaper = w; customWallpaper = ''; localStorage.setItem('wr_wallpaper', w); localStorage.removeItem('wr_custom_wallpaper'); applyWallpaper(); renderSettings(); };
+    window.uploadWallpaper = function(e) { const f = e.target.files[0]; if(f){ const r=new FileReader(); r.onload=ev=>{ customWallpaper=ev.target.result; localStorage.setItem('wr_custom_wallpaper',customWallpaper); applyWallpaper(); renderSettings(); }; r.readAsDataURL(f); } };
+    window.resetWallpaper = function() { customWallpaper=''; localStorage.removeItem('wr_custom_wallpaper'); wallpaper='dark'; localStorage.setItem('wr_wallpaper','dark'); applyWallpaper(); renderSettings(); };
+
+    // Удаление приложений
+    function deleteApp(id) { 
+        if(installedApps.has(id)){ installedApps.delete(id); localStorage.setItem('wr_installed',JSON.stringify([...installedApps])); addNotification(`🗑️ Удалено`); renderHome(); disableUninstallMode(); }
+        else if(webApps.some(a => a.id === id)) {
+            webApps = webApps.filter(a => a.id !== id);
+            localStorage.setItem('wr_webapps', JSON.stringify(webApps));
+            addNotification(`🗑️ Веб-приложение удалено`);
+            renderHome();
+            disableUninstallMode();
+        }
+    }
+    function enableUninstallMode() { uninstallMode=true; const h=document.createElement('div'); h.className='uninstall-mode-hint'; h.id='uninstallHint'; h.innerText='Нажмите ✕ для удаления'; document.body.appendChild(h); renderHome(); setTimeout(()=>{ if(uninstallMode) disableUninstallMode(); },10000); }
+    function disableUninstallMode() { uninstallMode=false; const h=document.getElementById('uninstallHint'); if(h) h.remove(); renderHome(); }
+    function toggleShade() { shade.classList.toggle('open'); }
+    window.toggleWiFi = () => { wifiOn=!wifiOn; document.getElementById('wifiStatus').innerText=wifiOn?'Вкл':'Выкл'; addNotification(wifiOn?'📶 WiFi включён':'📶 WiFi выключен'); };
+    window.toggleBluetooth = () => { bluetoothOn=!bluetoothOn; document.getElementById('btStatus').innerText=bluetoothOn?'Вкл':'Выкл'; addNotification(bluetoothOn?'🎵 Bluetooth включён':'🎵 Bluetooth выключен'); };
+    window.toggleFlashlight = () => { flashOn=!flashOn; document.getElementById('flashStatus').innerText=flashOn?'Вкл':'Выкл'; addNotification(flashOn?'🔦 Фонарик включён':'🔦 Фонарик выключен'); phoneDiv.style.boxShadow=flashOn?'0 0 20px 10px rgba(255,255,100,0.5)':'0 25px 50px -12px rgba(0,0,0,0.8)'; };
+    function addNotification(t) { const d=document.createElement('div'); d.className='notification-item'; d.innerText=t; document.getElementById('notificationsList').prepend(d); setTimeout(()=>d.remove(),5000); }
+    async function animateAndGoBack() { if(isClosing) return; isClosing=true; const v=document.querySelector('.app-view'); if(v){ v.classList.add('app-exit'); await new Promise(r=>setTimeout(r,200)); } goBack(); isClosing=false; }
+
+    // Добавление веб-приложения на главный экран
+    function renderAddWebApp() {
+        screenDiv.innerHTML = `
+            <div class="app-view">
+                <div class="app-header">
+                    <button class="back-btn" onclick="animateAndGoBack()">←</button>
+                    <h3>➕ Добавить веб-приложение</h3>
+                </div>
+                <div class="dark-card">
+                    <p>🔗 Введите URL сайта и название</p>
+                    <input type="text" id="webAppUrl" placeholder="https://example.com" value="https://">
+                    <input type="text" id="webAppName" placeholder="Название приложения">
+                    <input type="text" id="webAppIcon" placeholder="Иконка (эмодзи, например 🌐)">
+                    <button class="install-btn" onclick="addWebApp()">➕ Добавить на главный</button>
+                </div>
+            </div>
+        `;
+    }
+    window.addWebApp = () => {
+        const url = document.getElementById('webAppUrl').value;
+        const name = document.getElementById('webAppName').value;
+        let icon = document.getElementById('webAppIcon').value;
+        if(!url || !name) { addNotification('❌ Введите URL и название'); return; }
+        if(!icon) icon = '🌐';
+        const id = 'web_' + Date.now();
+        webApps.push({ id, name, icon, url });
+        localStorage.setItem('wr_webapps', JSON.stringify(webApps));
+        addNotification(`✅ ${name} добавлен на главный экран`);
+        renderHome();
+    };
+
+    // ОТКРЫТИЕ ПРИЛОЖЕНИЙ
+    window.openApp = function(id) {
+        if(uninstallMode){ disableUninstallMode(); return; }
+        // Проверка на веб-приложения
+        const webApp = webApps.find(a => a.id === id);
+        if(webApp) {
+            window.open(webApp.url, '_blank');
+            return;
+        }
+        if(id==='settings') renderSettings();
+        else if(id==='store') renderStore();
+        else if(id==='browser') renderBrowser();
+        else if(id==='notes') renderNotes();
+        else if(id==='telegram') renderTelegram();
+        else if(id==='zvuk') renderZvuk();
+        else if(id==='google') renderGoogle();
+        else if(id==='gmail') renderGmail();
+        else if(id==='googlemaps') renderGoogleMaps();
+        else if(id==='duolingo') renderDuolingo();
+        else if(id==='github') renderGithub();
+        else if(id==='figma') renderFigma();
+        else if(id==='canva') renderCanva();
+        else if(id==='notion') renderNotion();
+        else if(id==='zoom') renderZoom();
+        else if(id==='spotify') renderSpotify();
+        else if(id==='netflix') renderNetflix();
+        else if(id==='calculator') renderCalculator();
+        else if(id==='weather') renderWeather();
+        else if(id==='tetris') renderTetris();
+        else if(id==='snake') renderSnake();
+        else if(id==='music') renderMusic();
+        else if(id==='addwebapp') renderAddWebApp();
+        activityStack.push(id);
+    };
+
+    // ГЛАВНЫЙ ЭКРАН
+    function renderHome() {
+        const systemApps = [
+            { id:'settings', name:'Настройки', icon:'⚙️', system:true },
+            { id:'store', name:'Магазин', icon:'📦', system:true },
+            { id:'browser', name:'Браузер', icon:'🌐', system:true },
+            { id:'notes', name:'Заметки', icon:'📝', system:true },
+            { id:'music', name:'Музыка', icon:'🎵' },
+            { id:'addwebapp', name:'Добавить сайт', icon:'➕' }
+        ];
+        const allApps = [
+            { id:'telegram', name:'Telegram', icon:'✈️' },
+            { id:'zvuk', name:'Звук', icon:'🎧' },
+            { id:'google', name:'Google', icon:'🔍' },
+            { id:'gmail', name:'Gmail', icon:'📧' },
+            { id:'googlemaps', name:'Карты', icon:'🗺️' },
+            { id:'duolingo', name:'Duolingo', icon:'🦉' },
+            { id:'github', name:'GitHub', icon:'🐙' },
+            { id:'figma', name:'Figma', icon:'🎨' },
+            { id:'canva', name:'Canva', icon:'📱' },
+            { id:'notion', name:'Notion', icon:'📝' },
+            { id:'zoom', name:'Zoom', icon:'📹' },
+            { id:'spotify', name:'Spotify', icon:'🎵' },
+            { id:'netflix', name:'Netflix', icon:'📺' },
+            { id:'calculator', name:'Калькулятор', icon:'🧮' },
+            { id:'weather', name:'Погода', icon:'☁️' },
+            { id:'tetris', name:'Тетрис', icon:'🎮' },
+            { id:'snake', name:'Змейка', icon:'🐍' }
+        ];
+        const apps = [...systemApps];
+        allApps.forEach(app => { if(installedApps.has(app.id)) apps.push(app); });
+        webApps.forEach(app => { apps.push({ id:app.id, name:app.name, icon:app.icon }); });
+        
+        let html = '<div class="app-grid">';
+        apps.forEach(a=>{ html+=`<div class="app-icon" data-id="${a.id}" data-system="${a.system||false}">${uninstallMode && !a.system ? `<div class="delete-btn-overlay" onclick="event.stopPropagation(); deleteApp('${a.id}')">✕</div>` : ''}<div class="icon-circle">${a.icon}</div><div class="app-name">${a.name}</div></div>`; });
+        html+='</div>'; screenDiv.innerHTML=html;
+        
+        document.querySelectorAll('.app-icon').forEach(el=>{
+            const id=el.dataset.id, sys=el.dataset.system==='true';
+            let timer;
+            el.onclick=(e)=>{ if(e.target.classList.contains('delete-btn-overlay')) return; if(uninstallMode) disableUninstallMode(); else if(id) openApp(id); };
+            el.ontouchstart=()=>{ if(!sys && !uninstallMode) timer=setTimeout(()=>enableUninstallMode(),500); };
+            el.ontouchend=()=>clearTimeout(timer); el.ontouchmove=()=>clearTimeout(timer);
+            el.onmousedown=()=>{ if(!sys && !uninstallMode) timer=setTimeout(()=>enableUninstallMode(),500); };
+            el.onmouseup=()=>clearTimeout(timer);
+        });
+        activityStack=[];
+    }
+
+    // НАСТРОЙКИ
+    function renderSettings() {
+        const walls=['dark','gradient','nature','space','sunset','ocean','cherry','forest','midnight','lavender'];
+        const colors=['#1e1e2e','linear-gradient(145deg,#1a1f2e,#0a0c12)','#2a5f3a','#0b0b2b','linear-gradient(145deg,#ff7e5e,#feb47b)','linear-gradient(145deg,#1e3c72,#2a5298)','linear-gradient(145deg,#ff9a9e,#fad0c4)','linear-gradient(145deg,#134e5e,#71b280)','linear-gradient(145deg,#0f2027,#203a43,#2c5364)','linear-gradient(145deg,#c06c84,#6c5b7b)'];
+        let html=`<div class="app-view"><div class="app-header"><button class="back-btn" onclick="animateAndGoBack()">←</button><h3>Настройки WR OS</h3></div><div class="dark-card"><p>🎨 Обои</p><div>`;
+        walls.forEach((w,i)=>{ html+=`<div class="wallpaper-option ${wallpaper===w && !customWallpaper?'selected':''}" style="background:${colors[i]};" onclick="setWallpaper('${w}')"></div>`; });
+        html+=`</div></div><div class="dark-card"><p>📸 Своё фото</p><input type="file" accept="image/*" onchange="uploadWallpaper(event)"><button class="install-btn" style="margin-top:8px;" onclick="resetWallpaper()">Сбросить</button></div><div class="dark-card"><p>📱 Добавьте WR OS на главный экран!</p><p>🍏 iOS: Поделиться → "На экран «Домой»"<br>🤖 Android: Меню → "Установить приложение"</p><button class="install-btn" onclick="installPWA()">📲 Установить WR OS</button></div><div class="dark-card"><p>ℹ️ WR OS v6.0<br>С веб-приложениями, PWA и 20+ приложениями</p></div></div>`;
+        screenDiv.innerHTML=html;
+    }
+
+    // МАГАЗИН
+    let storeTab='apps';
+    function renderStore() {
+        const apps = [
+            { id:'zvuk', name:'Звук (Сбер)', icon:'🎧', desc:'Музыкальный стриминг' },
+            { id:'google', name:'Google', icon:'🔍', desc:'Поисковая система' },
+            { id:'gmail', name:'Gmail', icon:'📧', desc:'Почта' },
+            { id:'googlemaps', name:'Карты', icon:'🗺️', desc:'Навигация' },
+            { id:'duolingo', name:'Duolingo', icon:'🦉', desc:'Изучение языков' },
+            { id:'github', name:'GitHub', icon:'🐙', desc:'Код и разработка' },
+            { id:'figma', name:'Figma', icon:'🎨', desc:'Дизайн интерфейсов' },
+            { id:'canva', name:'Canva', icon:'📱', desc:'Графический дизайн' },
+            { id:'notion', name:'Notion', icon:'📝', desc:'Заметки и wiki' },
+            { id:'zoom', name:'Zoom', icon:'📹', desc:'Видеозвонки' },
+            { id:'spotify', name:'Spotify', icon:'🎵', desc:'Музыка' },
+            { id:'netflix', name:'Netflix', icon:'📺', desc:'Фильмы и сериалы' },
+            { id:'calculator', name:'Калькулятор', icon:'🧮', desc:'Счётчик' },
+            { id:'weather', name:'Погода', icon:'☁️', desc:'Прогноз' }
+        ];
+        const games = [
+            { id:'tetris', name:'Тетрис', icon:'🎮', desc:'Классика' },
+            { id:'snake', name:'Змейка', icon:'🐍', desc:'Ретро игра' }
+        ];
+        const items = storeTab==='apps' ? apps : games;
+        let html=`<div class="app-view"><div class="app-header"><button class="back-btn" onclick="animateAndGoBack()">←</button><h3>Магазин WR</h3></div><div class="store-tabs"><div class="store-tab ${storeTab==='apps'?'active':''}" onclick="setStoreTab('apps')">📱 Приложения (${apps.length})</div><div class="store-tab ${storeTab==='games'?'active':''}" onclick="setStoreTab('games')">🎮 Игры (${games.length})</div></div>`;
+        items.forEach(i=>{ const inst=installedApps.has(i.id); html+=`<div class="store-app"><div><span style="font-size:28px">${i.icon}</span> <strong>${i.name}</strong><br><small>${i.desc}</small></div>${!inst?`<button class="install-btn" onclick="installApp('${i.id}')">Установить</button>`:`<span style="color:#4c9aff">✓ Установлено</span>`}</div>`; });
+        html+=`</div>`; screenDiv.innerHTML=html;
+    }
+    window.setStoreTab = t => { storeTab=t; renderStore(); };
+    window.installApp = id => { installedApps.add(id); localStorage.setItem('wr_installed',JSON.stringify([...installedApps])); addNotification(`✅ ${id} установлен`); renderStore(); };
+
+    // ВЕБ-ПРИЛОЖЕНИЯ (открываются в новой вкладке)
+    function renderBrowser() { screenDiv.innerHTML=`<div class="app-view"><div class="app-header"><button class="back-btn" onclick="animateAndGoBack()">←</button><h3>Браузер</h3></div><input id="urlInput" placeholder="URL" value="https://google.com"><button class="install-btn" onclick="loadPage()">Перейти</button><iframe id="browserFrame" src="https://google.com" style="width:100%; height:450px;"></iframe><div class="dark-card"><button class="open-app-btn" onclick="addCurrentSite()">➕ Добавить этот сайт на главный</button></div></div>`; }
+    window.loadPage = () => { let u=document.getElementById('urlInput').value; if(!u.startsWith('http')) u='https://'+u; document.getElementById('browserFrame').src=u; window.currentSiteUrl = u; };
+    window.addCurrentSite = () => { if(window.currentSiteUrl) { let name = prompt('Название приложения:', new URL(window.currentSiteUrl).hostname); if(name) { let icon = prompt('Иконка (эмодзи):', '🌐'); webApps.push({ id:'web_'+Date.now(), name, icon:icon||'🌐', url:window.currentSiteUrl }); localStorage.setItem('wr_webapps', JSON.stringify(webApps)); addNotification(`✅ ${name} добавлен`); } } };
+    
+    function renderNotes() { screenDiv.innerHTML=`<div class="app-view"><div class="app-header"><button class="back-btn" onclick="animateAndGoBack()">←</button><h3>Заметки</h3></div><textarea id="notesArea" rows="10">${notes}</textarea><button class="install-btn" onclick="saveNotes()">Сохранить</button></div>`; if(document.getElementById('notesArea')) document.getElementById('notesArea').value=notes; }
+    window.saveNotes = () => { notes=document.getElementById('notesArea').value; localStorage.setItem('wr_notes',notes); addNotification('📝 Заметки сохранены'); };
+    
+    function renderTelegram() { screenDiv.innerHTML=`<div class="app-view"><div class="app-header"><button class="back-btn" onclick="animateAndGoBack()">←</button><h3>Telegram</h3></div><div class="dark-card"><button class="open-app-btn" onclick="window.open('https://web.telegram.org/k/','_blank')">📱 Открыть Telegram Web</button><button class="open-app-btn" style="background:#2a5f3a" onclick="window.open('https://t.me/proxy?server=s.rkn.tg&port=853&secret=ee54ce330e4690cc297d2b031ff3f288b06d742e616b656e61692e636c69636b','_blank')">🔌 Подключить прокси</button></div></div>`; }
+    
+    function renderZvuk() { screenDiv.innerHTML=`<div class="app-view"><div class="app-header"><button class="back-btn" onclick="animateAndGoBack()">←</button><h3>Звук</h3></div><div class="dark-card"><button class="open-app-btn" onclick="window.open('https://zvuk.com','_blank')">🎧 Открыть Звук</button></div></div>`; }
+    function renderGoogle() { screenDiv.innerHTML=`<div class="app-view"><div class="app-header"><button class="back-btn" onclick="animateAndGoBack()">←</button><h3>Google</h3></div><div class="dark-card"><button class="open-app-btn" onclick="window.open('https://google.com','_blank')">🔍 Открыть Google</button></div></div>`; }
+    function renderGmail() { screenDiv.innerHTML=`<div class="app-view"><div class="app-header"><button class="back-btn" onclick="animateAndGoBack()">←</button><h3>Gmail</h3></div><div class="dark-card"><button class="open-app-btn" onclick="window.open('https://mail.google.com','_blank')">📧 Открыть Gmail</button></div></div>`; }
+    function renderGoogleMaps() { screenDiv.innerHTML=`<div class="app-view"><div class="app-header"><button class="back-btn" onclick="animateAndGoBack()">←</button><h3>Google Карты</h3></div><div class="dark-card"><button class="open-app-btn" onclick="window.open('https://maps.google.com','_blank')">🗺️ Открыть Карты</button></div></div>`; }
+    function renderDuolingo() { screenDiv.innerHTML=`<div class="app-view"><div class="app-header"><button class="back-btn" onclick="animateAndGoBack()">←</button><h3>Duolingo</h3></div><div class="dark-card"><button class="open-app-btn" onclick="window.open('https://www.duolingo.com','_blank')">🦉 Учить языки</button></div></div>`; }
+    function renderGithub() { screenDiv.innerHTML=`<div class="app-view"><div class="app-header"><button class="back-btn" onclick="animateAndGoBack()">←</button><h3>GitHub</h3></div><div class="dark-card"><button class="open-app-btn" onclick="window.open('https://github.com','_blank')">🐙 Открыть GitHub</button></div></div>`; }
+    function renderFigma() { screenDiv.innerHTML=`<div class="app-view"><div class="app-header"><button class="back-btn" onclick="animateAndGoBack()">←</button><h3>Figma</h3></div><div class="dark-card"><button class="open-app-btn" onclick="window.open('https://figma.com','_blank')">🎨 Открыть Figma</button></div></div>`; }
+    function renderCanva() { screenDiv.innerHTML=`<div class="app-view"><div class="app-header"><button class="back-btn" onclick="animateAndGoBack()">←</button><h3>Canva</h3></div><div class="dark-card"><button class="open-app-btn" onclick="window.open('https://canva.com','_blank')">📱 Открыть Canva</button></div></div>`; }
+    function renderNotion() { screenDiv.innerHTML=`<div class="app-view"><div class="app-header"><button class="back-btn" onclick="animateAndGoBack()">←</button><h3>Notion</h3></div><div class="dark-card"><button class="open-app-btn" onclick="window.open('https://notion.so','_blank')">📝 Открыть Notion</button></div></div>`; }
+    function renderZoom() { screenDiv.innerHTML=`<div class="app-view"><div class="app-header"><button class="back-btn" onclick="animateAndGoBack()">←</button><h3>Zoom</h3></div><div class="dark-card"><button class="open-app-btn" onclick="window.open('https://zoom.us','_blank')">📹 Открыть Zoom</button></div></div>`; }
+    function renderSpotify() { screenDiv.innerHTML=`<div class="app-view"><div class="app-header"><button class="back-btn" onclick="animateAndGoBack()">←</button><h3>Spotify</h3></div><div class="dark-card"><button class="open-app-btn" onclick="window.open('https://open.spotify.com','_blank')">🎵 Слушать музыку</button></div></div>`; }
+    function renderNetflix() { screenDiv.innerHTML=`<div class="app-view"><div class="app-header"><button class="back-btn" onclick="animateAndGoBack()">←</button><h3>Netflix</h3></div><div class="dark-card"><button class="open-app-btn" onclick="window.open('https://netflix.com','_blank')">📺 Смотреть</button></div></div>`; }
+    
+    function renderCalculator() { screenDiv.innerHTML=`<div class="app-view"><div class="app-header"><button class="back-btn" onclick="animateAndGoBack()">←</button><h3>Калькулятор</h3></div><div class="dark-card"><input id="calcDisplay" readonly style="font-size:28px; text-align:right;"><div style="display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:16px;">${'789/456*123-0.=+'.split('').map(c=>`<button class="install-btn" style="background:#3a3f46;" onclick="calcPress('${c}')">${c}</button>`).join('')}<button class="install-btn" style="background:#d95b5b;" onclick="calcPress('C')">C</button></div></div></div>`; window.calcVal=''; if(document.getElementById('calcDisplay')) document.getElementById('calcDisplay').value=''; }
+    window.calcPress = v => { const d=document.getElementById('calcDisplay'); if(!d) return; if(v==='C'){ window.calcVal=''; d.value=''; }else if(v==='='){ try{ window.calcVal=eval(window.calcVal).toString(); d.value=window.calcVal; }catch(e){ d.value='Ошибка'; window.calcVal=''; } }else{ window.calcVal+=v; d.value=window.calcVal; } };
+    
+    function renderWeather() { screenDiv.innerHTML=`<div class="app-view"><div class="app-header"><button class="back-btn" onclick="animateAndGoBack()">←</button><h3>Погода</h3></div><div class="dark-card">🌤️ Москва: +18°<br>💨 Ветер 5 м/с<br>💧 62%</div></div>`; }
+    
+    function renderMusic() { screenDiv.innerHTML=`<div class="app-view"><div class="app-header"><button class="back-btn" onclick="animateAndGoBack()">←</button><h3>Музыка</h3></div><div class="dark-card"><button class="open-app-btn" onclick="window.open('https://zvuk.com','_blank')">🎧 Звук (Сбер)</button><button class="open-app-btn" onclick="window.open('https://open.spotify.com','_blank')">🎵 Spotify</button></div></div>`; }
+
+    // ТЕТРИС
+    function renderTetris() {
+        screenDiv.innerHTML=`<div class="app-view"><div class="app-header"><button class="back-btn" onclick="animateAndGoBack()">←</button><h3>Тетрис</h3></div><canvas id="tetrisCanvas" width="200" height="400" class="game-canvas"></canvas><div class="game-controls"><button class="game-btn" onclick="tetrisMove(-1)">◀</button><button class="game-btn" onclick="tetrisRotate()">🔄</button><button class="game-btn" onclick="tetrisMove(1)">▶</button><button class="game-btn" onclick="tetrisDrop()">⬇</button></div><p id="tetrisScore" style="text-align:center;">Score: 0</p><button class="install-btn" style="width:100%" onclick="initTetris()">Новая игра</button></div>`;
+        initTetris();
+    }
+    let tetrisGrid, tetrisPiece, tetrisScore, tetrisInterval;
+    function initTetris() { tetrisGrid=Array(20).fill().map(()=>Array(10).fill(0)); tetrisScore=0; updateTetrisScore(); spawnTetrisPiece(); if(tetrisInterval) clearInterval(tetrisInterval); tetrisInterval=setInterval(()=>{ if(!moveTetrisPiece(0,1)){ mergeTetrisPiece(); clearLinesTetris(); spawnTetrisPiece(); } drawTetris(); },500); drawTetris(); }
+    function spawnTetrisPiece() { tetrisPiece={ shape:[[1,1,1,1]], x:3, y:0 }; if(collisionTetris()) { alert("Game Over!"); clearInterval(tetrisInterval); initTetris(); } }
+    function collisionTetris() { for(let y=0;y<tetrisPiece.shape.length;y++) for(let x=0;x<tetrisPiece.shape[0].length;x++) if(tetrisPiece.shape[y][x] && (tetrisGrid[tetrisPiece.y+y]?.[tetrisPiece.x+x] || tetrisPiece.x+x<0 || tetrisPiece.x+x>=10 || tetrisPiece.y+y>=20)) return true; return false; }
+    function moveTetrisPiece(dx,dy) { tetrisPiece.x+=dx; tetrisPiece.y+=dy; if(collisionTetris()){ tetrisPiece.x-=dx; tetrisPiece.y-=dy; return false; } drawTetris(); return true; }
+    function rotateTetris() { const old=JSON.parse(JSON.stringify(tetrisPiece.shape)); tetrisPiece.shape=tetrisPiece.shape[0].map((_,i)=>tetrisPiece.shape.map(row=>row[i]).reverse()); if(collisionTetris()) tetrisPiece.shape=old; drawTetris(); }
+    function mergeTetrisPiece() { for(let y=0;y<tetrisPiece.shape.length;y++) for(let x=0;x<tetrisPiece.shape[0].length;x++) if(tetrisPiece.shape[y][x]) tetrisGrid[tetrisPiece.y+y][tetrisPiece.x+x]=1; }
+    function clearLinesTetris() { for(let y=0;y<20;y++) if(tetrisGrid[y].every(v=>v===1)){ tetrisGrid.splice(y,1); tetrisGrid.unshift(Array(10).fill(0)); tetrisScore+=100; updateTetrisScore(); } }
+    function updateTetrisScore() { const s=document.getElementById('tetrisScore'); if(s) s.innerText=`Score: ${tetrisScore}`; }
+    function drawTetris() { const c=document.getElementById('tetrisCanvas'); if(!c) return; const ctx=c.getContext('2d'); ctx.fillStyle='#000'; ctx.fillRect(0,0,200,400); ctx.fillStyle='#4c9aff'; for(let y=0;y<20;y++) for(let x=0;x<10;x++) if(tetrisGrid[y][x]) ctx.fillRect(x*20,y*20,18,18); for(let y=0;y<tetrisPiece.shape.length;y++) for(let x=0;x<tetrisPiece.shape[0].length;x++) if(tetrisPiece.shape[y][x]) ctx.fillRect((tetrisPiece.x+x)*20,(tetrisPiece.y+y)*20,18,18); }
+    window.tetrisMove=(dx)=>moveTetrisPiece(dx,0);
+    window.tetrisRotate=()=>rotateTetris();
+    window.tetrisDrop=()=>{ while(moveTetrisPiece(0,1)){} mergeTetrisPiece(); clearLinesTetris(); spawnTetrisPiece(); drawTetris(); };
+
+    // ЗМЕЙКА
+    function renderSnake() {
+        screenDiv.innerHTML=`<div class="app-view"><div class="app-header"><button class="back-btn" onclick="animateAndGoBack()">←</button><h3>Змейка</h3></div><canvas id="snakeCanvas" width="300" height="300" class="game-canvas"></canvas><div class="game-controls"><button class="game-btn" onclick="snakeDir('up')">▲</button><button class="game-btn" onclick="snakeDir('left')">◀</button><button class="game-btn" onclick="snakeDir('down')">▼</button><button class="game-btn" onclick="snakeDir('right')">▶</button></div><p id="snakeScoreDisplay" style="text-align:center;">Score: 0</p><button class="install-btn" style="width:100%" onclick="initSnake()">Новая игра</button></div>`;
+        initSnake();
+    }
+    let snake, snakeDirState, snakeFood, snakeScoreVal, snakeGameInterval;
+    function initSnake() { snake=[[7,7],[6,7],[5,7]]; snakeDirState='right'; snakeScoreVal=0; updateSnakeScoreDisplay(); spawnSnakeFood(); if(snakeGameInterval) clearInterval(snakeGameInterval); snakeGameInterval=setInterval(moveSnakeGame,150); drawSnakeGame(); }
+    function spawnSnakeFood() { let newFood; do{ newFood=[Math.floor(Math.random()*20),Math.floor(Math.random()*20)]; }while(snake.some(s=>s[0]===newFood[0] && s[1]===newFood[1])); snakeFood=newFood; }
+    function moveSnakeGame() { let newHead=[...snake[0]]; if(snakeDirState==='right') newHead[1]++; if(snakeDirState==='left') newHead[1]--; if(snakeDirState==='up') newHead[0]--; if(snakeDirState==='down') newHead[0]++; if(newHead[0]<0 || newHead[0]>=20 || newHead[1]<0 || newHead[1]>=20 || snake.some(s=>s[0]===newHead[0] && s[1]===newHead[1])) { clearInterval(snakeGameInterval); alert('Game Over!'); return; } snake.unshift(newHead); if(newHead[0]===snakeFood[0] && newHead[1]===snakeFood[1]){ snakeScoreVal+=10; updateSnakeScoreDisplay(); spawnSnakeFood(); } else snake.pop(); drawSnakeGame(); }
+    function updateSnakeScoreDisplay() { const s=document.getElementById('snakeScoreDisplay'); if(s) s.innerText=`Score: ${snakeScoreVal}`; }
+    function drawSnakeGame() { const c=document.getElementById('snakeCanvas'); if(!c) return; const ctx=c.getContext('2d'); ctx.fillStyle='#000'; ctx.fillRect(0,0,300,300); ctx.fillStyle='#4c9aff'; snake.forEach(s=>ctx.fillRect(s[1]*15,s[0]*15,13,13)); ctx.fillStyle='#ff3b30'; ctx.fillRect(snakeFood[1]*15,snakeFood[0]*15,13,13); }
+    window.snakeDir = d => { if((d==='right' && snakeDirState!=='left') || (d==='left' && snakeDirState!=='right') || (d==='up' && snakeDirState!=='down') || (d==='down' && snakeDirState!=='up')) snakeDirState=d; };
+
+    function goBack() { activityStack.pop(); if(activityStack.length===0) renderHome(); else openApp(activityStack[activityStack.length-1]); }
+    document.getElementById('homeBtn').onclick = () => { if(uninstallMode) disableUninstallMode(); renderHome(); activityStack=[]; };
+    document.getElementById('backBtn').onclick = () => animateAndGoBack();
+    document.getElementById('notifyBtn').onclick = () => toggleShade();
+    document.getElementById('closeShade').onclick = () => toggleShade();
+
+    applyWallpaper();
+    renderHome();
+</script>
+</body>
+</html>
