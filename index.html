@@ -3,12 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>WR OS 12.0</title>
-    
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="WR OS">
-    
+    <title>WR OS 13.0</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
         body { background: #1a1c1e; display: flex; justify-content: center; align-items: center; min-height: 100vh; font-family: 'Segoe UI', Roboto, system-ui, sans-serif; }
@@ -60,7 +55,6 @@
         .app-card-badge.popular { background: #ff9800; color: black; }
         .app-card-badge.vpn { background: #6a1b9a; }
         .install-btn { background: #4c9aff; padding: 8px 20px; border-radius: 30px; font-size: 12px; cursor: pointer; border: none; color: white; }
-        .install-btn.disabled { background: #555; cursor: not-allowed; }
         .logout-btn { background: #8b0000; padding: 8px 16px; border-radius: 30px; font-size: 12px; color: white; }
         .uninstall-mode-hint { background: rgba(0,0,0,0.8); position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); padding: 8px 16px; border-radius: 30px; font-size: 12px; z-index: 100; pointer-events: none; color: white; }
         .notification-shade { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 100; backdrop-filter: blur(4px); transition: transform 0.3s; transform: translateY(-100%); }
@@ -92,6 +86,9 @@
         .modal-option { padding: 12px; margin: 8px 0; background: #2c2f33; border-radius: 16px; cursor: pointer; color: white; }
         .modal-option:active { background: #4c9aff; }
         .overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 199; }
+        .vpn-app-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 12px; }
+        .vpn-app-item { background: #2c2f33; border-radius: 16px; padding: 12px; text-align: center; cursor: pointer; color: white; }
+        .vpn-app-item:active { background: #4c9aff; }
         iframe { width: 100%; height: 450px; border: none; border-radius: 20px; background: white; margin-top: 12px; }
         .folder-apps-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 12px; }
         .folder-app-item { cursor: pointer; text-align: center; padding: 8px; border-radius: 16px; background: #2c2f33; color: white; }
@@ -103,61 +100,66 @@
     <div class="status-bar"><span id="datetime">--:--</span><span id="battery">🔋 --%</span></div>
     <div class="screen" id="screen"></div>
     <div class="navbar"><button class="nav-btn" id="homeBtn">🏠</button><button class="nav-btn" id="backBtn">◀</button><button class="nav-btn" id="notifyBtn">🔔</button></div>
-    <div class="notification-shade" id="shade"><div class="shade-content"><span class="close-shade" id="closeShade">✕</span><h3>Панель управления</h3><div class="quick-settings"><div class="qs-icon" onclick="toggleWiFi()">📶 WiFi<br><span id="wifiStatus">Вкл</span></div><div class="qs-icon" onclick="toggleBluetooth()">🎵 Bluetooth<br><span id="btStatus">Вкл</span></div><div class="qs-icon" onclick="toggleFlashlight()">🔦 Фонарик<br><span id="flashStatus">Выкл</span></div></div><h4>Уведомления</h4><div id="notificationsList"><div class="notification-item">📱 WR OS v12.0 — Банки, Карты, Магазин</div></div></div></div>
+    <div class="notification-shade" id="shade"><div class="shade-content"><span class="close-shade" id="closeShade">✕</span><h3>Панель управления</h3><div class="quick-settings"><div class="qs-icon" onclick="toggleWiFi()">📶 WiFi<br><span id="wifiStatus">Вкл</span></div><div class="qs-icon" onclick="toggleBluetooth()">🎵 Bluetooth<br><span id="btStatus">Вкл</span></div><div class="qs-icon" onclick="toggleFlashlight()">🔦 Фонарик<br><span id="flashStatus">Выкл</span></div></div><h4>Уведомления</h4><div id="notificationsList"><div class="notification-item">📱 WR OS v13.0 — Прокси, VPN Host, Переводы по картам</div></div></div></div>
 </div>
 
 <script>
-    // ========== ВХОД ЧЕРЕЗ ЯНДЕКС ==========
+    // ========== АККАУНТ И ПРОКСИ ==========
     let currentUser = JSON.parse(localStorage.getItem('wr_user') || 'null');
     let userRegion = localStorage.getItem('wr_region') || 'russia';
     let proxyEnabled = localStorage.getItem('wr_proxy') === 'true';
     
     const YANDEX_CLIENT_ID = 'b16b13f5808c4210b78a2ac9195f1681';
     const REDIRECT_URI = window.location.href.split('?')[0];
-    const PROXY_SECRET = 'wr-os.ru/proxy/1need';
+    const VPN_HOST_APPS = ['expressvpn', 'nordvpn', 'protonvpn', 'surfshark'];
     
     function handleYandexRedirect() {
         const hash = window.location.hash.substring(1);
         const params = new URLSearchParams(hash);
-        const accessToken = params.get('access_token');
-        if(accessToken) {
-            fetch(`https://login.yandex.ru/info?format=json&oauth_token=${accessToken}`)
-                .then(res => res.json())
-                .then(data => {
-                    if(data.id) {
-                        currentUser = { id: data.id, name: data.real_name || data.display_name || data.login, email: data.default_email, avatar: data.default_avatar_id ? `https://avatars.yandex.net/get-yapic/${data.default_avatar_id}/islands-200` : '👤', login: data.login, region: 'russia' };
-                        localStorage.setItem('wr_user', JSON.stringify(currentUser));
-                        localStorage.setItem('wr_region', 'russia');
-                        userRegion = 'russia';
-                        addNotification(`✅ Добро пожаловать, ${currentUser.name}!`);
-                        window.location.hash = '';
-                        renderHome();
-                    }
-                }).catch(() => addNotification('❌ Ошибка входа'));
+        const token = params.get('access_token');
+        if(token) {
+            fetch(`https://login.yandex.ru/info?format=json&oauth_token=${token}`)
+                .then(r=>r.json()).then(d=>{ if(d.id){ currentUser={ id:d.id, name:d.real_name||d.display_name||d.login, email:d.default_email, avatar:d.default_avatar_id?`https://avatars.yandex.net/get-yapic/${d.default_avatar_id}/islands-200`:'👤', login:d.login, region:'russia' }; localStorage.setItem('wr_user',JSON.stringify(currentUser)); localStorage.setItem('wr_region','russia'); userRegion='russia'; addNotification(`✅ Добро пожаловать, ${currentUser.name}!`); window.location.hash=''; renderHome(); } }).catch(()=>addNotification('❌ Ошибка входа'));
         }
     }
-    
     function yandexLogin() { window.location.href = `https://oauth.yandex.ru/authorize?response_type=token&client_id=${YANDEX_CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`; }
-    function logout() { currentUser = null; proxyEnabled = false; localStorage.removeItem('wr_user'); localStorage.removeItem('wr_proxy'); addNotification('👋 Вы вышли'); renderHome(); }
+    function logout() { currentUser=null; proxyEnabled=false; localStorage.removeItem('wr_user'); localStorage.removeItem('wr_proxy'); addNotification('👋 Вы вышли'); renderHome(); }
     function isLoggedIn() { return currentUser !== null; }
     function hasProxyAccess() { return proxyEnabled; }
     
     function enableProxy() {
-        const code = prompt('Введите прокси-код для доступа ко всем приложениям:');
-        if(code === '1need') { proxyEnabled = true; localStorage.setItem('wr_proxy', 'true'); addNotification('✅ Прокси активирован! Теперь доступны все приложения'); } 
+        const code = prompt('Введите прокси-код:');
+        if(code === '1need') { proxyEnabled=true; localStorage.setItem('wr_proxy','true'); addNotification('✅ Прокси активирован! Теперь видны все приложения'); closeModal(); renderStore(); }
         else if(code) addNotification('❌ Неверный код');
-        closeModal();
-        renderStore();
     }
-    function disableProxy() { proxyEnabled = false; localStorage.removeItem('wr_proxy'); addNotification('🔓 Прокси отключён'); renderStore(); }
-    function isAppAvailable(appId, app) {
+    function disableProxy() { proxyEnabled=false; localStorage.removeItem('wr_proxy'); addNotification('🔓 Прокси отключён'); renderStore(); }
+    
+    // Региональная фильтрация (российские приложения только в РФ/РБ, зарубежные — только вне)
+    function isAppVisibleInRegion(app) {
         if(hasProxyAccess()) return true;
-        if(app.blockedInRussia && (userRegion === 'russia' || userRegion === 'belarus')) return false;
-        return true;
+        const isRussianApp = app.local === true;
+        const isForeignApp = app.blockedInRussia === true;
+        if(isRussianApp && (userRegion === 'russia' || userRegion === 'belarus')) return true;
+        if(isForeignApp && userRegion !== 'russia' && userRegion !== 'belarus') return true;
+        if(!isRussianApp && !isForeignApp) return true;
+        if(app.category === 'vpn' && (userRegion === 'russia' || userRegion === 'belarus')) return true;
+        if(app.id === 'vpnhost') return true;
+        return false;
     }
     
-    // ========== БАНКИ С КАРТАМИ ==========
+    // VPN Host как приложение внутри ОС
+    function renderVPNHost() {
+        let html = `<div class="app-view"><div class="app-header"><button class="back-btn" onclick="animateAndGoBack()">←</button><h3>🔒 VPN Хост</h3></div><div class="dark-card"><p>🌍 Включите VPN для доступа к заблокированным приложениям</p><p style="font-size:12px;">${proxyEnabled ? '✅ Прокси активен' : '❌ Прокси не активен'}</p><button class="install-btn" onclick="enableProxy()" style="background:#6a1b9a;">🔌 Включить прокси</button><button class="install-btn" onclick="disableProxy()" style="background:#555; margin-top:8px;">Выключить прокси</button></div><div class="vpn-app-grid">`;
+        const vpns = [{id:'expressvpn',name:'ExpressVPN',icon:'🚀'},{id:'nordvpn',name:'NordVPN',icon:'🛡️'},{id:'protonvpn',name:'ProtonVPN',icon:'🔒'},{id:'surfshark',name:'Surfshark',icon:'🦈'}];
+        vpns.forEach(v => { html += `<div class="vpn-app-item" onclick="window.open('https://www.${v.id}.com','_blank')"><div style="font-size:32px;">${v.icon}</div><div><strong>${v.name}</strong></div><div style="font-size:10px;">Официальный сайт</div></div>`; });
+        html += `</div></div>`;
+        screenDiv.innerHTML = html;
+    }
+    
+    // ========== БАНКИ С ПЕРЕВОДАМИ ПО КАРТАМ ==========
     let bankAccounts = JSON.parse(localStorage.getItem('wr_bank_accounts') || '{}');
+    
+    const russianBankIds = ['sberbank','vtb','tinkoff','alfa','yoomoney'];
     
     function initBank(bankId, bankName, startBalance = 15000, cardType = 'МИР') {
         if(!bankAccounts[bankId]) {
@@ -167,34 +169,43 @@
         }
     }
     
+    function makeTransferBetweenRussianBanks(fromBankId, toCardNumber, amount) {
+        const toBankEntry = Object.entries(bankAccounts).find(([id, acc]) => acc.cardNumber === toCardNumber && russianBankIds.includes(id));
+        if(!toBankEntry) return { success: false, error: 'Карта не найдена' };
+        if(bankAccounts[fromBankId].balance < amount) return { success: false, error: 'Недостаточно средств' };
+        bankAccounts[fromBankId].balance -= amount;
+        bankAccounts[toBankEntry[0]].balance += amount;
+        bankAccounts[fromBankId].transactions.unshift({ date: new Date().toISOString().slice(0,10), desc: `Перевод карте ${toCardNumber.slice(-4)}`, amount: amount, type: 'expense' });
+        bankAccounts[toBankEntry[0]].transactions.unshift({ date: new Date().toISOString().slice(0,10), desc: `Поступление с карты ${bankAccounts[fromBankId].cardNumber.slice(-4)}`, amount: amount, type: 'income' });
+        localStorage.setItem('wr_bank_accounts', JSON.stringify(bankAccounts));
+        return { success: true };
+    }
+    
     function renderBankApp(bankId, bankName, bankIcon, bankClass) {
-        if(!isAppAvailable(bankId, { blockedInRussia: bankId !== 'sberbank' && bankId !== 'vtb' && bankId !== 'tinkoff' && bankId !== 'alfa' && bankId !== 'yoomoney' })) {
+        if(!isAppVisibleInRegion({ local: russianBankIds.includes(bankId), blockedInRussia: !russianBankIds.includes(bankId) })) {
             screenDiv.innerHTML = `<div class="app-view"><div class="app-header"><button class="back-btn" onclick="animateAndGoBack()">←</button><h3>${bankIcon} ${bankName}</h3></div><div class="dark-card" style="text-align:center;">🌍 Приложение недоступно в вашем регионе</div></div>`;
             return;
         }
-        const cardType = (bankId === 'sberbank' || bankId === 'vtb' || bankId === 'tinkoff' || bankId === 'alfa' || bankId === 'yoomoney') ? 'МИР' : 'Visa';
+        const cardType = russianBankIds.includes(bankId) ? 'МИР' : 'Visa';
         initBank(bankId, bankName, 15000, cardType);
         const acc = bankAccounts[bankId];
         let html = `<div class="app-view"><div class="app-header"><button class="back-btn" onclick="animateAndGoBack()">←</button><h3>${bankIcon} ${bankName}</h3></div>`;
         html += `<div class="bank-card ${bankClass}"><div class="bank-card-chip"></div><div class="bank-card-number">${acc.cardNumber}</div><div class="bank-card-expiry"><span>VALID THRU ${acc.expiry}</span><span>${bankName.toUpperCase()}</span></div><div style="margin-top:12px;">💳 ${acc.cardType}</div></div>`;
-        html += `<div class="dark-card" style="text-align:center;"><div class="bank-balance" style="font-size:28px; color:#4c9aff;">${acc.balance.toLocaleString()} ₽</div><p>Доступно</p></div>`;
+        html += `<div class="dark-card" style="text-align:center;"><div style="font-size:28px; color:#4c9aff;">${acc.balance.toLocaleString()} ₽</div><p>Доступно</p></div>`;
         html += `<div class="dark-card"><h4>📊 Последние операции</h4>`;
-        acc.transactions.forEach(t => { html += `<div class="bank-transaction"><span>${t.date}</span><span>${t.desc}</span><span style="color:${t.type === 'income' ? '#4c9aff' : '#ff6b6b'}">${t.type === 'income' ? '+' : '-'} ${t.amount.toLocaleString()} ₽</span></div>`; });
-        html += `</div><div class="dark-card"><h4>💸 Перевод</h4><input id="transferAmount" type="number" placeholder="Сумма"><input id="transferTo" placeholder="Кому"><button class="install-btn" onclick="makeTransfer('${bankId}')">Перевести</button></div></div>`;
+        acc.transactions.slice(0,5).forEach(t => { html += `<div class="bank-transaction"><span>${t.date}</span><span>${t.desc}</span><span style="color:${t.type==='income'?'#4c9aff':'#ff6b6b'}">${t.type==='income'?'+':'-'} ${t.amount.toLocaleString()} ₽</span></div>`; });
+        html += `</div><div class="dark-card"><h4>💸 Перевод по номеру карты</h4><input id="transferAmount" type="number" placeholder="Сумма"><input id="transferToCard" placeholder="Номер карты получателя"><button class="install-btn" onclick="makeTransferFromBank('${bankId}')">Перевести</button></div></div>`;
         screenDiv.innerHTML = html;
     }
     
-    window.makeTransfer = (bankId) => {
+    window.makeTransferFromBank = (bankId) => {
         const amount = parseInt(document.getElementById('transferAmount')?.value);
-        const to = document.getElementById('transferTo')?.value;
-        if(!amount || amount <= 0) { addNotification('❌ Введите сумму'); return; }
-        if(!to) { addNotification('❌ Введите получателя'); return; }
-        if(bankAccounts[bankId].balance < amount) { addNotification('❌ Недостаточно средств'); return; }
-        bankAccounts[bankId].balance -= amount;
-        bankAccounts[bankId].transactions.unshift({ date: new Date().toISOString().slice(0,10), desc: `Перевод ${to}`, amount: amount, type: 'expense' });
-        localStorage.setItem('wr_bank_accounts', JSON.stringify(bankAccounts));
-        addNotification(`✅ Переведено ${amount} ₽`);
-        renderBankApp(bankId, bankAccounts[bankId].name, '', '');
+        const toCard = document.getElementById('transferToCard')?.value;
+        if(!amount || amount<=0) { addNotification('❌ Введите сумму'); return; }
+        if(!toCard) { addNotification('❌ Введите карту получателя'); return; }
+        const result = makeTransferBetweenRussianBanks(bankId, toCard, amount);
+        if(result.success) { addNotification(`✅ Переведено ${amount} ₽`); renderBankApp(bankId, bankAccounts[bankId].name, '', ''); }
+        else { addNotification(`❌ ${result.error}`); }
     };
     
     // ========== ПРИЛОЖЕНИЯ ==========
@@ -220,13 +231,6 @@
         { id:'paypal', name:'PayPal', icon:'💙', desc:'Платежная система', category:'bank', bankClass:'paypal', popular:true, blockedInRussia:true }
     ];
     
-    const vpnApps = [
-        { id:'expressvpn', name:'ExpressVPN', icon:'🔒', desc:'Быстрый и надёжный VPN', category:'vpn', url:'https://www.expressvpn.com' },
-        { id:'nordvpn', name:'NordVPN', icon:'🔒', desc:'Продвинутая защита', category:'vpn', url:'https://nordvpn.com' },
-        { id:'protonvpn', name:'ProtonVPN', icon:'🔒', desc:'Бесплатный VPN', category:'vpn', url:'https://protonvpn.com' },
-        { id:'surfshark', name:'Surfshark', icon:'🔒', desc:'Неограниченные устройства', category:'vpn', url:'https://surfshark.com' }
-    ];
-    
     const regularApps = [
         { id:'telegram', name:'Telegram', icon:'✈️', url:'https://web.telegram.org/k/', desc:'Мессенджер', category:'social', popular:true },
         { id:'zvuk', name:'Звук', icon:'🎧', url:'https://zvuk.com', desc:'Музыка от Сбера', category:'music' },
@@ -240,12 +244,13 @@
         { id:'calculator', name:'Калькулятор', icon:'🧮', url:null, desc:'Калькулятор', category:'tools' },
         { id:'weather', name:'Погода', icon:'☁️', url:null, desc:'Прогноз', category:'tools' },
         { id:'tetris', name:'Тетрис', icon:'🎮', url:null, desc:'Игра', category:'games', popular:true },
-        { id:'snake', name:'Змейка', icon:'🐍', url:null, desc:'Игра', category:'games' }
+        { id:'snake', name:'Змейка', icon:'🐍', url:null, desc:'Игра', category:'games' },
+        { id:'vpnhost', name:'VPN Host', icon:'🔒', desc:'Обход региональных блокировок', category:'vpn' }
     ];
     
-    const allStoreApps = [...bankApps, ...vpnApps, ...regularApps];
+    const allStoreApps = [...bankApps, ...regularApps];
     
-    let installedApps = new Set(JSON.parse(localStorage.getItem('wr_installed') || '["telegram","zvuk","google","gmail","googlemaps","duolingo","github","calculator","weather","tetris","snake","tinkoff","sberbank"]'));
+    let installedApps = new Set(JSON.parse(localStorage.getItem('wr_installed') || '["telegram","zvuk","google","gmail","googlemaps","duolingo","github","calculator","weather","tetris","snake","tinkoff","sberbank","vpnhost"]'));
     let webApps = JSON.parse(localStorage.getItem('wr_webapps') || '[]');
     let desktopLayout = JSON.parse(localStorage.getItem('wr_desktop') || '[]');
     let folders = JSON.parse(localStorage.getItem('wr_folders') || '[]');
@@ -253,19 +258,19 @@
     
     function initDesktop() {
         if(desktopLayout.length === 0) {
-            const systemFolderId = 'folder_system';
-            if(!folders.find(f => f.id === systemFolderId)) folders.push({ id: systemFolderId, name: 'Системные', icon: '⚙️', apps: ['settings', 'store', 'browser', 'notes'] });
-            desktopLayout.push({ type: 'folder', id: systemFolderId });
-            ['music', 'addwebapp', 'telegram', 'zvuk', 'google', 'tinkoff', 'sberbank'].forEach(app => { if(installedApps.has(app) || systemApps.find(a=>a.id===app)) desktopLayout.push(app); });
+            const sf = 'folder_system';
+            if(!folders.find(f=>f.id===sf)) folders.push({ id:sf, name:'Системные', icon:'⚙️', apps:['settings','store','browser','notes'] });
+            desktopLayout.push({ type:'folder', id:sf });
+            ['music','addwebapp','telegram','zvuk','google','tinkoff','sberbank','vpnhost'].forEach(app=>{ if(installedApps.has(app)||systemApps.find(a=>a.id===app)) desktopLayout.push(app); });
             saveDesktop();
         }
     }
-    function saveDesktop() { localStorage.setItem('wr_desktop', JSON.stringify(desktopLayout)); localStorage.setItem('wr_folders', JSON.stringify(folders)); }
-    function getAppInfo(appId) {
-        let app = systemApps.find(a => a.id === appId) || allStoreApps.find(a => a.id === appId);
+    function saveDesktop() { localStorage.setItem('wr_desktop',JSON.stringify(desktopLayout)); localStorage.setItem('wr_folders',JSON.stringify(folders)); }
+    function getAppInfo(id) {
+        let app = systemApps.find(a=>a.id===id) || allStoreApps.find(a=>a.id===id);
         if(app) return app;
-        let web = webApps.find(w => w.id === appId);
-        return web ? { id: web.id, name: web.name, icon: web.icon, url: web.url, webApp: true } : null;
+        let web = webApps.find(w=>w.id===id);
+        return web ? { id:web.id, name:web.name, icon:web.icon, url:web.url, webApp:true } : null;
     }
     
     let wallpaper = localStorage.getItem('wr_wallpaper') || 'dark';
@@ -276,7 +281,7 @@
     
     const screenDiv = document.getElementById('screen'), phoneDiv = document.getElementById('phoneContainer'), shade = document.getElementById('shade');
     
-    function updateDateTime() { const now=new Date(), mskOffset=3*60, localOffset=now.getTimezoneOffset(), mskTime=new Date(now.getTime()+(mskOffset+localOffset)*60000); document.getElementById('datetime').innerHTML=`${mskTime.getDate().toString().padStart(2,'0')}.${(mskTime.getMonth()+1).toString().padStart(2,'0')} ${mskTime.getHours().toString().padStart(2,'0')}:${mskTime.getMinutes().toString().padStart(2,'0')}`; }
+    function updateDateTime() { const n=new Date(), mskOffset=3*60, localOffset=n.getTimezoneOffset(), msk=new Date(n.getTime()+(mskOffset+localOffset)*60000); document.getElementById('datetime').innerHTML=`${msk.getDate().toString().padStart(2,'0')}.${(msk.getMonth()+1).toString().padStart(2,'0')} ${msk.getHours().toString().padStart(2,'0')}:${msk.getMinutes().toString().padStart(2,'0')}`; }
     function updateBattery() { if('getBattery'in navigator)navigator.getBattery().then(b=>{document.getElementById('battery').innerHTML=`${b.charging?'⚡':'🔋'} ${Math.round(b.level*100)}%`;}).catch(()=>{document.getElementById('battery').innerHTML='🔋 84%';}); else document.getElementById('battery').innerHTML='🔋 76%'; }
     setInterval(updateDateTime,1000); updateDateTime(); updateBattery();
     
@@ -306,7 +311,7 @@
         let html = `<div class="app-grid">`;
         for(let item of desktopLayout) {
             if(typeof item === 'string') { const app = getAppInfo(item); if(app) html += `<div class="app-icon" data-id="${app.id}">${uninstallMode && !app.system ? `<div class="delete-btn-overlay" onclick="deleteApp('${app.id}')">✕</div>` : ''}<div class="icon-circle">${app.icon}</div><div class="app-name">${app.name}</div></div>`; }
-            else if(item.type === 'folder') { const folder = folders.find(f => f.id === item.id); if(folder) html += `<div class="folder-icon" onclick="if(!uninstallMode) openFolder('${folder.id}')">${uninstallMode ? `<div class="delete-btn-overlay" onclick="deleteFolder('${folder.id}')">✕</div>` : ''}<div class="icon-circle">📁</div><div class="app-name">${folder.name}<span style="font-size:9px;">${folder.apps.length}</span></div></div>`; }
+            else if(item.type === 'folder') { const folder = folders.find(f=>f.id===item.id); if(folder) html += `<div class="folder-icon" onclick="if(!uninstallMode) openFolder('${folder.id}')">${uninstallMode ? `<div class="delete-btn-overlay" onclick="deleteFolder('${folder.id}')">✕</div>` : ''}<div class="icon-circle">📁</div><div class="app-name">${folder.name}<span style="font-size:9px;">${folder.apps.length}</span></div></div>`; }
         }
         html += `</div><div class="dark-card" style="display:flex; gap:10px; justify-content:center;"><button class="install-btn" onclick="createNewFolder()">📁 Новая папка</button><button class="install-btn" onclick="enableUninstallMode()">✏️ Режим правки</button></div>`;
         screenDiv.innerHTML = html;
@@ -316,9 +321,10 @@
     
     window.openApp = function(id) {
         if(uninstallMode){ disableUninstallMode(); return; }
+        if(id === 'vpnhost') { renderVPNHost(); activityStack.push(id); return; }
         const app = getAppInfo(id);
         if(!app) return;
-        if(bankApps.find(b => b.id === id)) { const b = bankApps.find(b => b.id === id); renderBankApp(id, b.name, b.icon, b.bankClass); }
+        if(bankApps.find(b=>b.id===id)) { const b = bankApps.find(b=>b.id===id); renderBankApp(id, b.name, b.icon, b.bankClass); }
         else if(app.url) openInInternalBrowser(app.url, app.name);
         else if(id==='settings') renderSettings();
         else if(id==='store') renderStore();
@@ -338,44 +344,38 @@
         const colors=['#1e1e2e','linear-gradient(145deg,#1a1f2e,#0a0c12)','#2a5f3a','#0b0b2b','linear-gradient(145deg,#ff7e5e,#feb47b)','linear-gradient(145deg,#1e3c72,#2a5298)','linear-gradient(145deg,#ff9a9e,#fad0c4)','linear-gradient(145deg,#134e5e,#71b280)','linear-gradient(145deg,#0f2027,#203a43,#2c5364)','linear-gradient(145deg,#c06c84,#6c5b7b)'];
         let html = `<div class="app-view"><div class="app-header"><button class="back-btn" onclick="animateAndGoBack()">←</button><h3>Настройки</h3></div><div class="dark-card"><div class="profile-header"><div class="profile-avatar">${currentUser?.avatar === '👤' ? '👤' : `<img src="${currentUser?.avatar}" style="width:60px;height:60px;border-radius:30px;">`}</div><div><h4>${currentUser?.name}</h4><p>${currentUser?.email}</p></div></div><button class="logout-btn" onclick="logout()">Выйти</button></div>`;
         html += `<div class="dark-card"><p>🎨 Обои</p><div>${walls.map((w,i)=>`<div class="wallpaper-option ${wallpaper===w && !customWallpaper?'selected':''}" style="background:${colors[i]};" onclick="setWallpaper('${w}')"></div>`).join('')}</div><input type="file" accept="image/*" onchange="uploadWallpaper(event)"><button class="install-btn" onclick="resetWallpaper()">Сбросить</button></div>`;
-        html += `<div class="dark-card"><p>ℹ️ WR OS v12.0<br>✅ Лучшие банки с уникальным дизайном<br>✅ VPN-сервисы в магазине<br>✅ Скрытые настройки магазина</p></div></div>`;
+        html += `<div class="dark-card"><p>🔒 Прокси: ${proxyEnabled ? '✅ Включён' : '❌ Выключен'}</p><button class="install-btn" onclick="enableProxy()">Включить прокси</button><button class="install-btn" onclick="disableProxy()" style="background:#555; margin-top:8px;">Выключить</button></div>`;
+        html += `<div class="dark-card"><p>ℹ️ WR OS v13.0<br>✅ Перевода между российскими банками по картам<br>✅ VPN Host в магазине<br>✅ Прокси показывает скрытые приложения</p></div></div>`;
         screenDiv.innerHTML = html;
     }
     
     function showStoreSettings() {
         let modal = document.createElement('div');
-        modal.innerHTML = `<div class="overlay" onclick="this.parentElement.remove()"></div><div class="modal"><h3>⚙️ Настройки магазина</h3><div class="modal-option" onclick="checkUpdates()">🔄 Обновления приложений</div><div class="modal-option" onclick="enableProxy()">🔌 Включить прокси</div><div class="modal-option" onclick="showRegionSelector()">🌍 Изменить регион</div><div class="modal-option" onclick="this.parentElement.parentElement.remove()">✖️ Закрыть</div></div>`;
+        modal.innerHTML = `<div class="overlay" onclick="this.parentElement.remove()"></div><div class="modal"><h3>⚙️ Настройки магазина</h3><div class="modal-option" onclick="checkUpdates()">🔄 Обновления приложений</div><div class="modal-option" onclick="enableProxy()">🔌 Включить прокси</div><div class="modal-option" onclick="disableProxy()">🔌 Выключить прокси</div><div class="modal-option" onclick="showRegionSelector()">🌍 Изменить регион</div><div class="modal-option" onclick="this.parentElement.parentElement.remove()">✖️ Закрыть</div></div>`;
         document.body.appendChild(modal);
     }
-    
     function checkUpdates() { addNotification('✅ Все приложения обновлены'); closeModal(); }
-    function showRegionSelector() {
-        closeModal();
-        let modal = document.createElement('div');
-        modal.innerHTML = `<div class="overlay" onclick="this.parentElement.remove()"></div><div class="modal"><h3>🌍 Выберите регион</h3><div class="modal-option" onclick="setRegion('russia')">🇷🇺 Россия</div><div class="modal-option" onclick="setRegion('belarus')">🇧🇾 Беларусь</div><div class="modal-option" onclick="setRegion('usa')">🇺🇸 США</div><div class="modal-option" onclick="setRegion('europe')">🇪🇺 Европа</div><div class="modal-option" onclick="this.parentElement.parentElement.remove()">✖️ Отмена</div></div>`;
-        document.body.appendChild(modal);
-    }
-    function setRegion(region) { userRegion = region; localStorage.setItem('wr_region', region); addNotification(`🌍 Регион: ${region}`); closeModal(); renderStore(); }
-    function closeModal() { const m = document.querySelector('.overlay'); if(m) m.parentElement?.remove(); }
+    function showRegionSelector() { closeModal(); let modal = document.createElement('div'); modal.innerHTML = `<div class="overlay" onclick="this.parentElement.remove()"></div><div class="modal"><h3>🌍 Выберите регион</h3><div class="modal-option" onclick="setRegion('russia')">🇷🇺 Россия</div><div class="modal-option" onclick="setRegion('belarus')">🇧🇾 Беларусь</div><div class="modal-option" onclick="setRegion('usa')">🇺🇸 США</div><div class="modal-option" onclick="setRegion('europe')">🇪🇺 Европа</div><div class="modal-option" onclick="this.parentElement.parentElement.remove()">✖️ Отмена</div></div>`; document.body.appendChild(modal); }
+    function setRegion(region) { userRegion=region; localStorage.setItem('wr_region',region); addNotification(`🌍 Регион: ${region}`); closeModal(); renderStore(); }
+    function closeModal() { const m=document.querySelector('.overlay'); if(m) m.parentElement?.remove(); }
     
     function renderStore() {
         if(!isLoggedIn()) { screenDiv.innerHTML = `<div class="app-view" style="text-align:center; padding:40px;"><div style="font-size:64px;">🔐</div><h3>Войдите в аккаунт</h3><button class="install-btn" onclick="yandexLogin()" style="background:#fc3f1d;">Яндекс ID</button></div>`; return; }
         let filtered = allStoreApps.filter(app => {
             if(searchQuery && !app.name.toLowerCase().includes(searchQuery.toLowerCase()) && !app.desc.toLowerCase().includes(searchQuery.toLowerCase())) return false;
             if(storeTab === 'banks') return app.category === 'bank';
-            if(storeTab === 'vpn') return app.category === 'vpn';
+            if(storeTab === 'vpn') return app.category === 'vpn' || app.id === 'vpnhost';
             if(storeTab === 'social') return app.category === 'social';
             if(storeTab === 'tools') return app.category === 'tools';
-            if(storeTab === 'entertainment') return app.category === 'entertainment' || app.category === 'music';
             if(storeTab === 'games') return app.category === 'games';
             return true;
-        }).filter(app => isAppAvailable(app.id, app));
+        }).filter(app => isAppVisibleInRegion(app));
         
         let html = `<div class="app-view"><div class="store-header"><h3>Магазин</h3><div class="settings-icon" onclick="showStoreSettings()">⚙️</div></div><div class="search-box"><span>🔍</span><input type="text" id="searchInput" placeholder="Поиск" value="${searchQuery}" oninput="updateSearch()"></div>`;
         html += `<div class="store-tabs"><div class="store-tab ${storeTab==='all'?'active':''}" onclick="setStoreTab('all')">📱 Все</div><div class="store-tab ${storeTab==='banks'?'active':''}" onclick="setStoreTab('banks')">🏦 Банки</div><div class="store-tab ${storeTab==='vpn'?'active':''}" onclick="setStoreTab('vpn')">🔒 VPN</div><div class="store-tab ${storeTab==='social'?'active':''}" onclick="setStoreTab('social')">💬 Соцсети</div><div class="store-tab ${storeTab==='tools'?'active':''}" onclick="setStoreTab('tools')">🛠️ Инструменты</div><div class="store-tab ${storeTab==='games'?'active':''}" onclick="setStoreTab('games')">🎮 Игры</div></div>`;
         filtered.forEach(app => {
             const isInstalled = installedApps.has(app.id);
-            html += `<div class="app-card"><div class="app-card-content"><div class="app-card-icon">${app.icon}</div><div class="app-card-info"><h4>${app.name}</h4><p>${app.desc}</p><div>${app.category==='bank'?'<span class="app-card-badge bank">🏦 Банк</span>':''}${app.category==='vpn'?'<span class="app-card-badge vpn">🔒 VPN</span>':''}${app.popular?'<span class="app-card-badge popular">⭐ Популярное</span>':''}${isInstalled?'<span class="app-card-badge installed">✓ Установлено</span>':''}</div></div><div class="app-card-actions">${!isInstalled?`<button class="install-btn" onclick="installApp('${app.id}')">📥 Установить</button>`:`<button class="install-btn" style="background:#555;" onclick="openApp('${app.id}')">🚀 Открыть</button>`}</div></div></div>`;
+            html += `<div class="app-card"><div class="app-card-content"><div class="app-card-icon">${app.icon}</div><div class="app-card-info"><h4>${app.name}</h4><p>${app.desc}</p><div>${app.category==='bank'?'<span class="app-card-badge bank">🏦 Банк</span>':''}${app.category==='vpn'||app.id==='vpnhost'?'<span class="app-card-badge vpn">🔒 VPN</span>':''}${app.popular?'<span class="app-card-badge popular">⭐ Популярное</span>':''}${isInstalled?'<span class="app-card-badge installed">✓ Установлено</span>':''}</div></div><div class="app-card-actions">${!isInstalled?`<button class="install-btn" onclick="installApp('${app.id}')">📥 Установить</button>`:`<button class="install-btn" style="background:#555;" onclick="openApp('${app.id}')">🚀 Открыть</button>`}</div></div></div>`;
         });
         html += `</div>`;
         screenDiv.innerHTML = html;
@@ -385,19 +385,18 @@
     window.setStoreTab = (t) => { storeTab = t; renderStore(); };
     window.installApp = (id) => { installedApps.add(id); localStorage.setItem('wr_installed', JSON.stringify([...installedApps])); if(!desktopLayout.includes(id)) desktopLayout.push(id); saveDesktop(); addNotification(`✅ Установлен`); renderStore(); renderHome(); };
     
-    function createNewFolder() { const name = prompt('Название папки:'); if(name) { const id = 'folder_'+Date.now(); folders.push({ id, name, icon:'📁', apps:[] }); desktopLayout.push({ type:'folder', id }); saveDesktop(); renderHome(); addNotification(`✅ Папка "${name}" создана`); } }
-    function deleteFolder(folderId) { const folder = folders.find(f=>f.id===folderId); if(folder && confirm(`Удалить папку "${folder.name}"?`)) { folder.apps.forEach(a=>{ if(!desktopLayout.includes(a)) desktopLayout.push(a); }); folders = folders.filter(f=>f.id!==folderId); desktopLayout = desktopLayout.filter(i=>!(i.type==='folder'&&i.id===folderId)); saveDesktop(); renderHome(); } }
-    function openFolder(folderId) { const folder = folders.find(f=>f.id===folderId); if(!folder) return; let html = `<div class="app-view"><div class="app-header"><button class="back-btn" onclick="animateAndGoBack()">←</button><h3>📁 ${folder.name}</h3><button class="install-btn" onclick="renameFolder('${folderId}')">✏️ Переименовать</button></div><div class="folder-apps-grid">${folder.apps.map(appId=>{ const a=getAppInfo(appId); return a?`<div class="folder-app-item" onclick="openApp('${appId}')"><div class="icon-circle" style="width:50px;height:50px;font-size:28px;margin:0 auto 5px;">${a.icon}</div><div style="font-size:11px;">${a.name}</div></div>`:''; }).join('')}</div><div class="dark-card"><button class="install-btn" onclick="removeAppFromFolder('${folderId}')">❌ Удалить приложение</button></div></div>`;
-        screenDiv.innerHTML = html;
-        activityStack.push('folder_'+folderId);
-        window.removeAppFromFolder = (fid) => { const f = folders.find(ff=>ff.id===fid); if(f && f.apps.length) { const aid = prompt(`ID приложения (${f.apps.join(', ')})`); if(aid && f.apps.includes(aid)) { f.apps = f.apps.filter(a=>a!==aid); desktopLayout.unshift(aid); saveDesktop(); openFolder(fid); } } };
+    function createNewFolder() { const name = prompt('Название папки:'); if(name) { const id='folder_'+Date.now(); folders.push({id,name,icon:'📁',apps:[]}); desktopLayout.push({type:'folder',id}); saveDesktop(); renderHome(); addNotification(`✅ Папка "${name}" создана`); } }
+    function deleteFolder(folderId) { const folder=folders.find(f=>f.id===folderId); if(folder && confirm(`Удалить папку "${folder.name}"?`)) { folder.apps.forEach(a=>{ if(!desktopLayout.includes(a)) desktopLayout.push(a); }); folders=folders.filter(f=>f.id!==folderId); desktopLayout=desktopLayout.filter(i=>!(i.type==='folder'&&i.id===folderId)); saveDesktop(); renderHome(); } }
+    function openFolder(folderId) { const folder=folders.find(f=>f.id===folderId); if(!folder) return; let html=`<div class="app-view"><div class="app-header"><button class="back-btn" onclick="animateAndGoBack()">←</button><h3>📁 ${folder.name}</h3><button class="install-btn" onclick="renameFolder('${folderId}')">✏️ Переименовать</button></div><div class="folder-apps-grid">${folder.apps.map(a=>{ const app=getAppInfo(a); return app?`<div class="folder-app-item" onclick="openApp('${app.id}')"><div class="icon-circle" style="width:50px;height:50px;font-size:28px;margin:0 auto 5px;">${app.icon}</div><div style="font-size:11px;">${app.name}</div></div>`:''; }).join('')}</div><div class="dark-card"><button class="install-btn" onclick="removeFromFolder('${folderId}')">❌ Удалить приложение</button></div></div>`;
+        screenDiv.innerHTML=html; activityStack.push('folder_'+folderId);
+        window.removeFromFolder = (fid) => { const f=folders.find(ff=>ff.id===fid); if(f && f.apps.length) { const aid=prompt(`ID приложения (${f.apps.join(', ')})`); if(aid && f.apps.includes(aid)) { f.apps=f.apps.filter(a=>a!==aid); desktopLayout.unshift(aid); saveDesktop(); openFolder(fid); } } };
     }
-    function renameFolder(folderId) { const folder = folders.find(f=>f.id===folderId); if(folder) { const newName = prompt('Новое имя:', folder.name); if(newName) { folder.name = newName; saveDesktop(); openFolder(folderId); } } }
+    function renameFolder(folderId) { const folder=folders.find(f=>f.id===folderId); if(folder) { const newName=prompt('Новое имя:', folder.name); if(newName) { folder.name=newName; saveDesktop(); openFolder(folderId); } } }
     
     function renderNotes() { screenDiv.innerHTML=`<div class="app-view"><div class="app-header"><button class="back-btn" onclick="animateAndGoBack()">←</button><h3>Заметки</h3></div><textarea id="notesArea" rows="10">${notes}</textarea><button class="install-btn" onclick="saveNotes()">Сохранить</button></div>`; if(document.getElementById('notesArea')) document.getElementById('notesArea').value=notes; }
-    window.saveNotes = () => { notes=document.getElementById('notesArea').value; localStorage.setItem('wr_notes',notes); addNotification('📝 Сохранено'); };
+    window.saveNotes=()=>{ notes=document.getElementById('notesArea').value; localStorage.setItem('wr_notes',notes); addNotification('📝 Сохранено'); };
     function renderCalculator() { screenDiv.innerHTML=`<div class="app-view"><div class="app-header"><button class="back-btn" onclick="animateAndGoBack()">←</button><h3>Калькулятор</h3></div><div class="dark-card"><input id="calcDisplay" readonly style="font-size:28px;text-align:right;"><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:16px;">${'789/456*123-0.=+'.split('').map(c=>`<button class="install-btn" style="background:#3a3f46;" onclick="calcPress('${c}')">${c}</button>`).join('')}<button class="install-btn" style="background:#d95b5b;" onclick="calcPress('C')">C</button></div></div></div>`; window.calcVal=''; if(document.getElementById('calcDisplay')) document.getElementById('calcDisplay').value=''; }
-    window.calcPress = v => { const d=document.getElementById('calcDisplay'); if(!d) return; if(v==='C'){ window.calcVal=''; d.value=''; }else if(v==='='){ try{ window.calcVal=eval(window.calcVal).toString(); d.value=window.calcVal; }catch(e){ d.value='Ошибка'; window.calcVal=''; } }else{ window.calcVal+=v; d.value=window.calcVal; } };
+    window.calcPress=v=>{ const d=document.getElementById('calcDisplay'); if(!d)return; if(v==='C'){ window.calcVal=''; d.value=''; }else if(v==='='){ try{ window.calcVal=eval(window.calcVal).toString(); d.value=window.calcVal; }catch(e){ d.value='Ошибка'; window.calcVal=''; } }else{ window.calcVal+=v; d.value=window.calcVal; } };
     function renderWeather() { screenDiv.innerHTML=`<div class="app-view"><div class="app-header"><button class="back-btn" onclick="animateAndGoBack()">←</button><h3>Погода</h3></div><div class="dark-card">🌤️ Москва: +18°<br>💨 Ветер 5 м/с<br>💧 62%</div></div>`; }
     function renderMusic() { screenDiv.innerHTML=`<div class="app-view"><div class="app-header"><button class="back-btn" onclick="animateAndGoBack()">←</button><h3>Музыка</h3></div><div class="dark-card"><button class="install-btn" onclick="openInInternalBrowser('https://zvuk.com','Звук')">🎧 Звук</button><button class="install-btn" onclick="openInInternalBrowser('https://open.spotify.com','Spotify')" style="margin-top:8px;">🎵 Spotify</button></div></div>`; }
     
