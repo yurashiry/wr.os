@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>WR OS 11.0 — Реальный вход, Банки, VPN-хостер</title>
+    <title>WR OS 11.0</title>
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -170,7 +170,7 @@
     
     function getBlockedMessage(appName) {
         if(vpnActive) return `🌍 ${appName} недоступен в вашем регионе. Возможно, нужен другой VPN-сервер.`;
-        return `🔒 ${appName} недоступен в вашем регионе. Включите VPN в приложении "VPN Хост" чтобы открыть.`;
+        return `🔒 ${appName} недоступен в вашем регионе.`;
     }
     
     // ========== ДЕМО-БАНКИ ==========
@@ -438,7 +438,7 @@
         html += `<div class="dark-card"><p>🎨 Обои</p><div>`;
         walls.forEach((w,i)=>{ html+=`<div class="wallpaper-option ${wallpaper===w && !customWallpaper?'selected':''}" style="background:${colors[i]};" onclick="setWallpaper('${w}')"></div>`; });
         html+=`</div></div><div class="dark-card"><p>📸 Своё фото</p><input type="file" accept="image/*" onchange="uploadWallpaper(event)"><button class="install-btn" style="margin-top:8px;" onclick="resetWallpaper()">Сбросить</button></div>`;
-        html+=`<div class="dark-card"><p>ℹ️ WR OS v11.0<br>✅ Реальный вход через Яндекс<br>✅ Американские банки (Chase, BoA, Revolut, Wise, PayPal)<br>✅ VPN-хостер для обхода блокировок<br>✅ Поиск в магазине</p></div></div>`;
+        html+=`<div class="dark-card"><p>ℹ️ WR OS v11.0<br>✅ Dход через Яндекс<br>✅ Американские банки (Chase, BoA, Revolut, Wise, PayPal)<br>✅ VPN-хостер для обхода блокировок<br>✅ Поиск в магазине</p></div></div>`;
         screenDiv.innerHTML = html;
     }
     
