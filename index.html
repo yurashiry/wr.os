@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>WR OS 13.0</title>
+    <title>WR OS 14.0 — О телефоне, Модификации, Алтайск</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
         body { background: #1a1c1e; display: flex; justify-content: center; align-items: center; min-height: 100vh; font-family: 'Segoe UI', Roboto, system-ui, sans-serif; }
@@ -73,11 +73,6 @@
         .bank-card.tinkoff { background: linear-gradient(135deg, #6a1b9a, #4a0072); }
         .bank-card.alfa { background: linear-gradient(135deg, #cc0000, #8b0000); }
         .bank-card.yoomoney { background: linear-gradient(135deg, #f5a623, #d48200); color: #1a1c1e; }
-        .bank-card.chase { background: linear-gradient(135deg, #0a5c36, #064e2a); }
-        .bank-card.bofa { background: linear-gradient(135deg, #003d7c, #002a55); }
-        .bank-card.revolut { background: linear-gradient(135deg, #1a1a2e, #0f0f1f); }
-        .bank-card.wise { background: linear-gradient(135deg, #9b59b6, #7d3c98); }
-        .bank-card.paypal { background: linear-gradient(135deg, #0070ba, #005a91); }
         .bank-card-chip { width: 40px; height: 30px; background: #d4af37; border-radius: 8px; margin-bottom: 20px; }
         .bank-card-number { font-size: 18px; letter-spacing: 2px; margin: 16px 0; font-family: monospace; }
         .bank-card-expiry { display: flex; justify-content: space-between; margin-top: 16px; font-size: 12px; }
@@ -89,6 +84,8 @@
         .vpn-app-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 12px; }
         .vpn-app-item { background: #2c2f33; border-radius: 16px; padding: 12px; text-align: center; cursor: pointer; color: white; }
         .vpn-app-item:active { background: #4c9aff; }
+        .info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #333; }
+        .mod-active { background: #6a1b9a; padding: 4px 8px; border-radius: 12px; font-size: 11px; display: inline-block; margin-left: 8px; }
         iframe { width: 100%; height: 450px; border: none; border-radius: 20px; background: white; margin-top: 12px; }
         .folder-apps-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 12px; }
         .folder-app-item { cursor: pointer; text-align: center; padding: 8px; border-radius: 16px; background: #2c2f33; color: white; }
@@ -100,10 +97,86 @@
     <div class="status-bar"><span id="datetime">--:--</span><span id="battery">🔋 --%</span></div>
     <div class="screen" id="screen"></div>
     <div class="navbar"><button class="nav-btn" id="homeBtn">🏠</button><button class="nav-btn" id="backBtn">◀</button><button class="nav-btn" id="notifyBtn">🔔</button></div>
-    <div class="notification-shade" id="shade"><div class="shade-content"><span class="close-shade" id="closeShade">✕</span><h3>Панель управления</h3><div class="quick-settings"><div class="qs-icon" onclick="toggleWiFi()">📶 WiFi<br><span id="wifiStatus">Вкл</span></div><div class="qs-icon" onclick="toggleBluetooth()">🎵 Bluetooth<br><span id="btStatus">Вкл</span></div><div class="qs-icon" onclick="toggleFlashlight()">🔦 Фонарик<br><span id="flashStatus">Выкл</span></div></div><h4>Уведомления</h4><div id="notificationsList"><div class="notification-item">📱 WR OS v13.0 — Прокси, VPN Host, Переводы по картам</div></div></div></div>
+    <div class="notification-shade" id="shade"><div class="shade-content"><span class="close-shade" id="closeShade">✕</span><h3>Панель управления</h3><div class="quick-settings"><div class="qs-icon" onclick="toggleWiFi()">📶 WiFi<br><span id="wifiStatus">Вкл</span></div><div class="qs-icon" onclick="toggleBluetooth()">🎵 Bluetooth<br><span id="btStatus">Вкл</span></div><div class="qs-icon" onclick="toggleFlashlight()">🔦 Фонарик<br><span id="flashStatus">Выкл</span></div></div><h4>Уведомления</h4><div id="notificationsList"><div class="notification-item">📱 WR OS v14.0 — О телефоне, Модификации, Алтайск</div></div></div></div>
 </div>
 
 <script>
+    // ========== МОДИФИКАЦИИ ==========
+    let activeMod = localStorage.getItem('wr_mod') || null;
+    
+    function applyMod(modCode) {
+        if(modCode === 'yurskk') {
+            activeMod = 'yurskk';
+            localStorage.setItem('wr_mod', 'yurskk');
+            localStorage.setItem('wr_region', 'altaysk');
+            userRegion = 'altaysk';
+            addNotification('✨ Мод "yurskk" активирован! Регион: Алтайск. Все приложения доступны!');
+            renderHome();
+            renderSettings();
+            renderStore();
+            return true;
+        } else if(modCode === 'mike') {
+            activeMod = 'mike';
+            localStorage.setItem('wr_mod', 'mike');
+            addNotification('🎨 Мод "mike" активирован! Добавлены новые обои и приложения');
+            renderHome();
+            renderSettings();
+            renderStore();
+            return true;
+        }
+        return false;
+    }
+    
+    function deactivateMod() {
+        activeMod = null;
+        localStorage.removeItem('wr_mod');
+        if(userRegion === 'altaysk') {
+            userRegion = 'russia';
+            localStorage.setItem('wr_region', 'russia');
+        }
+        addNotification('🔧 Моды отключены');
+        renderHome();
+        renderSettings();
+        renderStore();
+    }
+    
+    function isModActive() { return activeMod !== null; }
+    function isAltayskRegion() { return userRegion === 'altaysk' || activeMod === 'yurskk'; }
+    
+    // Расширенные обои для мода mike
+    const extraWallpapers = [
+        { id: 'aurora', name: 'Северное сияние', color: 'linear-gradient(145deg, #0f4c5c, #1a2a3a)' },
+        { id: 'galaxy', name: 'Галактика', color: 'linear-gradient(145deg, #1a0a2e, #0f0f1a)' },
+        { id: 'cyberpunk', name: 'Киберпанк', color: 'linear-gradient(145deg, #ff007f, #7000ff)' },
+        { id: 'sunset2', name: 'Закат на пляже', color: 'linear-gradient(145deg, #ff6b6b, #feca57)' },
+        { id: 'forest2', name: 'Туманный лес', color: 'linear-gradient(145deg, #2d6a4f, #1b4332)' },
+        { id: 'ocean2', name: 'Глубины океана', color: 'linear-gradient(145deg, #0077b6, #023e8a)' }
+    ];
+    
+    const standardWallpapers = [
+        { id: 'dark', name: 'Тёмный', color: '#0f0f0f' },
+        { id: 'gradient', name: 'Градиент', color: 'linear-gradient(145deg, #1a1f2e, #0a0c12)' },
+        { id: 'nature', name: 'Природа', color: '#2a5f3a' },
+        { id: 'space', name: 'Космос', color: '#0b0b2b' },
+        { id: 'sunset', name: 'Закат', color: 'linear-gradient(145deg, #ff7e5e, #feb47b)' },
+        { id: 'ocean', name: 'Океан', color: 'linear-gradient(145deg, #1e3c72, #2a5298)' },
+        { id: 'cherry', name: 'Сакура', color: 'linear-gradient(145deg, #ff9a9e, #fad0c4)' },
+        { id: 'forest', name: 'Лес', color: 'linear-gradient(145deg, #134e5e, #71b280)' },
+        { id: 'midnight', name: 'Полночь', color: 'linear-gradient(145deg, #0f2027, #203a43, #2c5364)' },
+        { id: 'lavender', name: 'Лаванда', color: 'linear-gradient(145deg, #c06c84, #6c5b7b)' }
+    ];
+    
+    function getAllWallpapers() {
+        if(activeMod === 'mike') return [...standardWallpapers, ...extraWallpapers];
+        return standardWallpapers;
+    }
+    
+    // Приложения для мода mike (Revolut и Netflix в России)
+    const mikeApps = [
+        { id:'revolut_ru', name:'Revolut', icon:'💎', url:'https://www.revolut.com', desc:'Международный банк (Российская версия)', category:'bank', popular:true, local:true },
+        { id:'netflix_ru', name:'Netflix', icon:'📺', url:'https://netflix.com', desc:'Фильмы и сериалы (Российская версия)', category:'entertainment', popular:true, local:true }
+    ];
+    
     // ========== АККАУНТ И ПРОКСИ ==========
     let currentUser = JSON.parse(localStorage.getItem('wr_user') || 'null');
     let userRegion = localStorage.getItem('wr_region') || 'russia';
@@ -111,7 +184,6 @@
     
     const YANDEX_CLIENT_ID = 'b16b13f5808c4210b78a2ac9195f1681';
     const REDIRECT_URI = window.location.href.split('?')[0];
-    const VPN_HOST_APPS = ['expressvpn', 'nordvpn', 'protonvpn', 'surfshark'];
     
     function handleYandexRedirect() {
         const hash = window.location.hash.substring(1);
@@ -119,46 +191,34 @@
         const token = params.get('access_token');
         if(token) {
             fetch(`https://login.yandex.ru/info?format=json&oauth_token=${token}`)
-                .then(r=>r.json()).then(d=>{ if(d.id){ currentUser={ id:d.id, name:d.real_name||d.display_name||d.login, email:d.default_email, avatar:d.default_avatar_id?`https://avatars.yandex.net/get-yapic/${d.default_avatar_id}/islands-200`:'👤', login:d.login, region:'russia' }; localStorage.setItem('wr_user',JSON.stringify(currentUser)); localStorage.setItem('wr_region','russia'); userRegion='russia'; addNotification(`✅ Добро пожаловать, ${currentUser.name}!`); window.location.hash=''; renderHome(); } }).catch(()=>addNotification('❌ Ошибка входа'));
+                .then(r=>r.json()).then(d=>{ if(d.id){ currentUser={ id:d.id, name:d.real_name||d.display_name||d.login, email:d.default_email, avatar:d.default_avatar_id?`https://avatars.yandex.net/get-yapic/${d.default_avatar_id}/islands-200`:'👤', login:d.login, region:'russia' }; localStorage.setItem('wr_user',JSON.stringify(currentUser)); if(!activeMod) { localStorage.setItem('wr_region','russia'); userRegion='russia'; } addNotification(`✅ Добро пожаловать, ${currentUser.name}!`); window.location.hash=''; renderHome(); } }).catch(()=>addNotification('❌ Ошибка входа'));
         }
     }
     function yandexLogin() { window.location.href = `https://oauth.yandex.ru/authorize?response_type=token&client_id=${YANDEX_CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`; }
-    function logout() { currentUser=null; proxyEnabled=false; localStorage.removeItem('wr_user'); localStorage.removeItem('wr_proxy'); addNotification('👋 Вы вышли'); renderHome(); }
+    function logout() { currentUser=null; localStorage.removeItem('wr_user'); addNotification('👋 Вы вышли'); renderHome(); }
     function isLoggedIn() { return currentUser !== null; }
-    function hasProxyAccess() { return proxyEnabled; }
+    function hasProxyAccess() { return proxyEnabled || isAltayskRegion(); }
     
     function enableProxy() {
         const code = prompt('Введите прокси-код:');
-        if(code === '1need') { proxyEnabled=true; localStorage.setItem('wr_proxy','true'); addNotification('✅ Прокси активирован! Теперь видны все приложения'); closeModal(); renderStore(); }
+        if(code === '1need') { proxyEnabled=true; localStorage.setItem('wr_proxy','true'); addNotification('✅ Прокси активирован!'); closeModal(); renderStore(); }
         else if(code) addNotification('❌ Неверный код');
     }
     function disableProxy() { proxyEnabled=false; localStorage.removeItem('wr_proxy'); addNotification('🔓 Прокси отключён'); renderStore(); }
     
-    // Региональная фильтрация (российские приложения только в РФ/РБ, зарубежные — только вне)
     function isAppVisibleInRegion(app) {
-        if(hasProxyAccess()) return true;
+        if(hasProxyAccess() || isAltayskRegion()) return true;
         const isRussianApp = app.local === true;
         const isForeignApp = app.blockedInRussia === true;
         if(isRussianApp && (userRegion === 'russia' || userRegion === 'belarus')) return true;
         if(isForeignApp && userRegion !== 'russia' && userRegion !== 'belarus') return true;
         if(!isRussianApp && !isForeignApp) return true;
         if(app.category === 'vpn' && (userRegion === 'russia' || userRegion === 'belarus')) return true;
-        if(app.id === 'vpnhost') return true;
         return false;
     }
     
-    // VPN Host как приложение внутри ОС
-    function renderVPNHost() {
-        let html = `<div class="app-view"><div class="app-header"><button class="back-btn" onclick="animateAndGoBack()">←</button><h3>🔒 VPN Хост</h3></div><div class="dark-card"><p>🌍 Включите VPN для доступа к заблокированным приложениям</p><p style="font-size:12px;">${proxyEnabled ? '✅ Прокси активен' : '❌ Прокси не активен'}</p><button class="install-btn" onclick="enableProxy()" style="background:#6a1b9a;">🔌 Включить прокси</button><button class="install-btn" onclick="disableProxy()" style="background:#555; margin-top:8px;">Выключить прокси</button></div><div class="vpn-app-grid">`;
-        const vpns = [{id:'expressvpn',name:'ExpressVPN',icon:'🚀'},{id:'nordvpn',name:'NordVPN',icon:'🛡️'},{id:'protonvpn',name:'ProtonVPN',icon:'🔒'},{id:'surfshark',name:'Surfshark',icon:'🦈'}];
-        vpns.forEach(v => { html += `<div class="vpn-app-item" onclick="window.open('https://www.${v.id}.com','_blank')"><div style="font-size:32px;">${v.icon}</div><div><strong>${v.name}</strong></div><div style="font-size:10px;">Официальный сайт</div></div>`; });
-        html += `</div></div>`;
-        screenDiv.innerHTML = html;
-    }
-    
-    // ========== БАНКИ С ПЕРЕВОДАМИ ПО КАРТАМ ==========
+    // ========== БАНКИ ==========
     let bankAccounts = JSON.parse(localStorage.getItem('wr_bank_accounts') || '{}');
-    
     const russianBankIds = ['sberbank','vtb','tinkoff','alfa','yoomoney'];
     
     function initBank(bankId, bankName, startBalance = 15000, cardType = 'МИР') {
@@ -248,7 +308,11 @@
         { id:'vpnhost', name:'VPN Host', icon:'🔒', desc:'Обход региональных блокировок', category:'vpn' }
     ];
     
-    const allStoreApps = [...bankApps, ...regularApps];
+    function getAllStoreApps() {
+        let apps = [...bankApps, ...regularApps];
+        if(activeMod === 'mike') apps = [...apps, ...mikeApps];
+        return apps;
+    }
     
     let installedApps = new Set(JSON.parse(localStorage.getItem('wr_installed') || '["telegram","zvuk","google","gmail","googlemaps","duolingo","github","calculator","weather","tetris","snake","tinkoff","sberbank","vpnhost"]'));
     let webApps = JSON.parse(localStorage.getItem('wr_webapps') || '[]');
@@ -267,7 +331,7 @@
     }
     function saveDesktop() { localStorage.setItem('wr_desktop',JSON.stringify(desktopLayout)); localStorage.setItem('wr_folders',JSON.stringify(folders)); }
     function getAppInfo(id) {
-        let app = systemApps.find(a=>a.id===id) || allStoreApps.find(a=>a.id===id);
+        let app = systemApps.find(a=>a.id===id) || getAllStoreApps().find(a=>a.id===id);
         if(app) return app;
         let web = webApps.find(w=>w.id===id);
         return web ? { id:web.id, name:web.name, icon:web.icon, url:web.url, webApp:true } : null;
@@ -285,7 +349,10 @@
     function updateBattery() { if('getBattery'in navigator)navigator.getBattery().then(b=>{document.getElementById('battery').innerHTML=`${b.charging?'⚡':'🔋'} ${Math.round(b.level*100)}%`;}).catch(()=>{document.getElementById('battery').innerHTML='🔋 84%';}); else document.getElementById('battery').innerHTML='🔋 76%'; }
     setInterval(updateDateTime,1000); updateDateTime(); updateBattery();
     
-    function applyWallpaper() { if(customWallpaper) phoneDiv.style.background=`url(${customWallpaper}) center/cover no-repeat`; else { const g={dark:'#0f0f0f',gradient:'linear-gradient(145deg,#1a1f2e,#0a0c12)',nature:'#2a5f3a',space:'#0b0b2b',sunset:'linear-gradient(145deg,#ff7e5e,#feb47b)',ocean:'linear-gradient(145deg,#1e3c72,#2a5298)',cherry:'linear-gradient(145deg,#ff9a9e,#fad0c4)',forest:'linear-gradient(145deg,#134e5e,#71b280)',midnight:'linear-gradient(145deg,#0f2027,#203a43,#2c5364)',lavender:'linear-gradient(145deg,#c06c84,#6c5b7b)'}; phoneDiv.style.background=g[wallpaper]||g.dark; } }
+    function applyWallpaper() {
+        if(customWallpaper) phoneDiv.style.background=`url(${customWallpaper}) center/cover no-repeat`;
+        else { const wallpapers = getAllWallpapers(); const found = wallpapers.find(w=>w.id===wallpaper); phoneDiv.style.background = found ? found.color : '#0f0f0f'; }
+    }
     window.setWallpaper=function(w){wallpaper=w;customWallpaper='';localStorage.setItem('wr_wallpaper',w);localStorage.removeItem('wr_custom_wallpaper');applyWallpaper();renderSettings();};
     window.uploadWallpaper=function(e){const f=e.target.files[0];if(f){const r=new FileReader();r.onload=ev=>{customWallpaper=ev.target.result;localStorage.setItem('wr_custom_wallpaper',customWallpaper);applyWallpaper();renderSettings();};r.readAsDataURL(f);}};
     window.resetWallpaper=function(){customWallpaper='';localStorage.removeItem('wr_custom_wallpaper');wallpaper='dark';localStorage.setItem('wr_wallpaper','dark');applyWallpaper();renderSettings();};
@@ -324,7 +391,7 @@
         if(id === 'vpnhost') { renderVPNHost(); activityStack.push(id); return; }
         const app = getAppInfo(id);
         if(!app) return;
-        if(bankApps.find(b=>b.id===id)) { const b = bankApps.find(b=>b.id===id); renderBankApp(id, b.name, b.icon, b.bankClass); }
+        if(bankApps.find(b=>b.id===id) || (activeMod==='mike' && mikeApps.find(m=>m.id===id))) { const b = getAllStoreApps().find(b=>b.id===id); if(b) renderBankApp(id, b.name, b.icon, b.bankClass || 'revolut'); }
         else if(app.url) openInInternalBrowser(app.url, app.name);
         else if(id==='settings') renderSettings();
         else if(id==='store') renderStore();
@@ -339,13 +406,79 @@
         activityStack.push(id);
     };
     
+    // О ТЕЛЕФОНЕ
+    function renderAboutPhone() {
+        const ua = navigator.userAgent;
+        const platform = navigator.platform;
+        const language = navigator.language;
+        const screenRes = `${screen.width} x ${screen.height}`;
+        const screenSize = `${screen.width}px x ${screen.height}px`;
+        const colorDepth = screen.colorDepth;
+        const pixelRatio = window.devicePixelRatio;
+        const memory = navigator.deviceMemory ? `${navigator.deviceMemory} GB` : 'недоступно';
+        const cores = navigator.hardwareConcurrency ? `${navigator.hardwareConcurrency} ядер` : 'недоступно';
+        const touchPoints = navigator.maxTouchPoints || 'недоступно';
+        const isOnline = navigator.onLine ? '✅ Онлайн' : '❌ Офлайн';
+        const browserName = (() => { const ua = navigator.userAgent; if(ua.indexOf('Chrome') > -1) return 'Chrome'; if(ua.indexOf('Firefox') > -1) return 'Firefox'; if(ua.indexOf('Safari') > -1) return 'Safari'; if(ua.indexOf('Edge') > -1) return 'Edge'; return 'Unknown'; })();
+        const osName = (() => { const ua = navigator.userAgent; if(ua.indexOf('Android') > -1) return 'Android'; if(ua.indexOf('iPhone') > -1 || ua.indexOf('iPad') > -1) return 'iOS'; if(ua.indexOf('Windows') > -1) return 'Windows'; if(ua.indexOf('Mac') > -1) return 'macOS'; if(ua.indexOf('Linux') > -1) return 'Linux'; return 'Unknown'; })();
+        
+        let html = `<div class="app-view"><div class="app-header"><button class="back-btn" onclick="animateAndGoBack()">←</button><h3>📱 О телефоне</h3></div><div class="dark-card">`;
+        html += `<div class="info-row"><span>📱 Устройство:</span><span>${osName}</span></div>`;
+        html += `<div class="info-row"><span>🌐 Браузер:</span><span>${browserName}</span></div>`;
+        html += `<div class="info-row"><span>🖥️ Платформа:</span><span>${platform}</span></div>`;
+        html += `<div class="info-row"><span>🌍 Язык:</span><span>${language}</span></div>`;
+        html += `<div class="info-row"><span>📺 Экран:</span><span>${screenRes}</span></div>`;
+        html += `<div class="info-row"><span>🎨 Глубина цвета:</span><span>${colorDepth} бит</span></div>`;
+        html += `<div class="info-row"><span>🔍 Pixel Ratio:</span><span>${pixelRatio}</span></div>`;
+        html += `<div class="info-row"><span>💾 Оперативная память:</span><span>${memory}</span></div>`;
+        html += `<div class="info-row"><span>⚡ Процессор:</span><span>${cores}</span></div>`;
+        html += `<div class="info-row"><span>🖱️ Точки касания:</span><span>${touchPoints}</span></div>`;
+        html += `<div class="info-row"><span>📡 Статус сети:</span><span>${isOnline}</span></div>`;
+        html += `<div class="info-row"><span>🔋 Уровень заряда:</span><span>${document.getElementById('battery')?.innerText || '--'}</span></div>`;
+        html += `</div><div class="dark-card"><h4>🔧 Системная информация</h4>`;
+ html += `<div class="info-row"><span>User Agent:</span><span style="font-size:10px;">${ua.substring(0, 80)}...</span></div>`;
+        html += `<div class="info-row"><span>WR OS версия:</span><span>14.0</span></div>`;
+        if(activeMod) html += `<div class="info-row"><span>🎮 Активный мод:</span><span>${activeMod}</span></div>`;
+        if(isAltayskRegion()) html += `<div class="info-row"><span>🗺️ Регион:</span><span>🏔️ Алтайск (все приложения доступны)</span></div>`;
+        html += `</div></div>`;
+        screenDiv.innerHTML = html;
+    }
+    
+    // МОДИФИКАЦИИ
+    function renderModifications() {
+        let html = `<div class="app-view"><div class="app-header"><button class="back-btn" onclick="animateAndGoBack()">←</button><h3>🔧 Модификации WR OS</h3></div><div class="dark-card"><p>Введите код мода для активации новых возможностей</p><input type="text" id="modCode" placeholder="Код мода"><button class="install-btn" onclick="enterModCode()">Активировать мод</button>`;
+        if(activeMod) html += `<button class="install-btn" onclick="deactivateMod()" style="background:#8b0000; margin-top:8px;">Отключить мод (${activeMod})</button>`;
+        html += `</div><div class="dark-card"><h4>✨ Активные улучшения:</h4><ul>`;
+        if(activeMod === 'yurskk') html += `<li>🏔️ Регион Алтайск — все приложения доступны без VPN</li><li>🎬 Улучшенные анимации интерфейса</li><li>🎨 Новые цвета обоев</li>`;
+        else if(activeMod === 'mike') html += `<li>🎨 6 новых эксклюзивных обоев</li><li>📱 Российские версии Revolut и Netflix в магазине</li><li>🖼️ Картинки для обоев из коллекции Mike</li>`;
+        else html += `<li>❌ Нет активных модов. Введите код для активации.</li>`;
+        html += `</ul></div></div>`;
+        screenDiv.innerHTML = html;
+    }
+    
+    window.enterModCode = () => {
+        const code = document.getElementById('modCode')?.value?.toLowerCase();
+        if(code === 'yurskk') applyMod('yurskk');
+        else if(code === 'mike') applyMod('mike');
+        else addNotification('❌ Неверный код мода');
+        renderModifications();
+    };
+    
+    function renderVPNHost() {
+        let html = `<div class="app-view"><div class="app-header"><button class="back-btn" onclick="animateAndGoBack()">←</button><h3>🔒 VPN Хост</h3></div><div class="dark-card"><p>🌍 Управление доступом к приложениям</p><p style="font-size:12px;">${hasProxyAccess() ? '✅ Полный доступ (прокси/мод активен)' : '❌ Обычный режим'}</p><button class="install-btn" onclick="enableProxy()" style="background:#6a1b9a;">🔌 Включить прокси</button><button class="install-btn" onclick="disableProxy()" style="background:#555; margin-top:8px;">Выключить прокси</button></div><div class="vpn-app-grid">`;
+        const vpns = [{id:'expressvpn',name:'ExpressVPN',icon:'🚀'},{id:'nordvpn',name:'NordVPN',icon:'🛡️'},{id:'protonvpn',name:'ProtonVPN',icon:'🔒'},{id:'surfshark',name:'Surfshark',icon:'🦈'}];
+        vpns.forEach(v => { html += `<div class="vpn-app-item" onclick="window.open('https://www.${v.id}.com','_blank')"><div style="font-size:32px;">${v.icon}</div><div><strong>${v.name}</strong></div><div style="font-size:10px;">Официальный сайт</div></div>`; });
+        html += `</div></div>`;
+        screenDiv.innerHTML = html;
+    }
+    
     function renderSettings() {
-        const walls=['dark','gradient','nature','space','sunset','ocean','cherry','forest','midnight','lavender'];
-        const colors=['#1e1e2e','linear-gradient(145deg,#1a1f2e,#0a0c12)','#2a5f3a','#0b0b2b','linear-gradient(145deg,#ff7e5e,#feb47b)','linear-gradient(145deg,#1e3c72,#2a5298)','linear-gradient(145deg,#ff9a9e,#fad0c4)','linear-gradient(145deg,#134e5e,#71b280)','linear-gradient(145deg,#0f2027,#203a43,#2c5364)','linear-gradient(145deg,#c06c84,#6c5b7b)'];
+        const wallpapers = getAllWallpapers();
         let html = `<div class="app-view"><div class="app-header"><button class="back-btn" onclick="animateAndGoBack()">←</button><h3>Настройки</h3></div><div class="dark-card"><div class="profile-header"><div class="profile-avatar">${currentUser?.avatar === '👤' ? '👤' : `<img src="${currentUser?.avatar}" style="width:60px;height:60px;border-radius:30px;">`}</div><div><h4>${currentUser?.name}</h4><p>${currentUser?.email}</p></div></div><button class="logout-btn" onclick="logout()">Выйти</button></div>`;
-        html += `<div class="dark-card"><p>🎨 Обои</p><div>${walls.map((w,i)=>`<div class="wallpaper-option ${wallpaper===w && !customWallpaper?'selected':''}" style="background:${colors[i]};" onclick="setWallpaper('${w}')"></div>`).join('')}</div><input type="file" accept="image/*" onchange="uploadWallpaper(event)"><button class="install-btn" onclick="resetWallpaper()">Сбросить</button></div>`;
-        html += `<div class="dark-card"><p>🔒 Прокси: ${proxyEnabled ? '✅ Включён' : '❌ Выключен'}</p><button class="install-btn" onclick="enableProxy()">Включить прокси</button><button class="install-btn" onclick="disableProxy()" style="background:#555; margin-top:8px;">Выключить</button></div>`;
-        html += `<div class="dark-card"><p>ℹ️ WR OS v13.0<br>✅ Перевода между российскими банками по картам<br>✅ VPN Host в магазине<br>✅ Прокси показывает скрытые приложения</p></div></div>`;
+        html += `<div class="dark-card"><p>🎨 Обои</p><div class="app-grid" style="grid-template-columns:repeat(4,1fr); gap:8px;">${wallpapers.map(w=>`<div class="wallpaper-option ${wallpaper===w.id && !customWallpaper?'selected':''}" style="background:${w.color};" onclick="setWallpaper('${w.id}')" title="${w.name}"></div>`).join('')}</div><input type="file" accept="image/*" onchange="uploadWallpaper(event)"><button class="install-btn" onclick="resetWallpaper()">Сбросить</button></div>`;
+        html += `<div class="dark-card"><button class="install-btn" onclick="renderAboutPhone()" style="width:100%; margin-bottom:8px;">📱 О телефоне</button><button class="install-btn" onclick="renderModifications()" style="width:100%; background:#6a1b9a;">🔧 Модификации</button></div>`;
+        html += `<div class="dark-card"><p>🔒 Прокси: ${hasProxyAccess() ? '✅ Активен' : '❌ Не активен'}</p><button class="install-btn" onclick="enableProxy()">Включить прокси</button><button class="install-btn" onclick="disableProxy()" style="background:#555;">Выключить</button></div>`;
+        html += `<div class="dark-card"><p>ℹ️ WR OS v14.0<br>✅ О телефоне (вся информация об устройстве)<br>✅ Модификации (коды yurskk, mike)<br>✅ Регион Алтайск — все приложения доступны</p></div></div>`;
         screenDiv.innerHTML = html;
     }
     
@@ -355,13 +488,14 @@
         document.body.appendChild(modal);
     }
     function checkUpdates() { addNotification('✅ Все приложения обновлены'); closeModal(); }
-    function showRegionSelector() { closeModal(); let modal = document.createElement('div'); modal.innerHTML = `<div class="overlay" onclick="this.parentElement.remove()"></div><div class="modal"><h3>🌍 Выберите регион</h3><div class="modal-option" onclick="setRegion('russia')">🇷🇺 Россия</div><div class="modal-option" onclick="setRegion('belarus')">🇧🇾 Беларусь</div><div class="modal-option" onclick="setRegion('usa')">🇺🇸 США</div><div class="modal-option" onclick="setRegion('europe')">🇪🇺 Европа</div><div class="modal-option" onclick="this.parentElement.parentElement.remove()">✖️ Отмена</div></div>`; document.body.appendChild(modal); }
+    function showRegionSelector() { closeModal(); let modal = document.createElement('div'); modal.innerHTML = `<div class="overlay" onclick="this.parentElement.remove()"></div><div class="modal"><h3>🌍 Выберите регион</h3><div class="modal-option" onclick="setRegion('russia')">🇷🇺 Россия</div><div class="modal-option" onclick="setRegion('belarus')">🇧🇾 Беларусь</div><div class="modal-option" onclick="setRegion('usa')">🇺🇸 США</div><div class="modal-option" onclick="setRegion('europe')">🇪🇺 Европа</div>${activeMod !== 'yurskk' ? '<div class="modal-option" onclick="setRegion(\'altaysk\')">🏔️ Алтайск (требуется мод)</div>' : '<div class="modal-option" onclick="setRegion(\'altaysk\')">🏔️ Алтайск</div>'}<div class="modal-option" onclick="this.parentElement.parentElement.remove()">✖️ Отмена</div></div>`; document.body.appendChild(modal); }
     function setRegion(region) { userRegion=region; localStorage.setItem('wr_region',region); addNotification(`🌍 Регион: ${region}`); closeModal(); renderStore(); }
     function closeModal() { const m=document.querySelector('.overlay'); if(m) m.parentElement?.remove(); }
     
     function renderStore() {
         if(!isLoggedIn()) { screenDiv.innerHTML = `<div class="app-view" style="text-align:center; padding:40px;"><div style="font-size:64px;">🔐</div><h3>Войдите в аккаунт</h3><button class="install-btn" onclick="yandexLogin()" style="background:#fc3f1d;">Яндекс ID</button></div>`; return; }
-        let filtered = allStoreApps.filter(app => {
+        let appsList = getAllStoreApps();
+        let filtered = appsList.filter(app => {
             if(searchQuery && !app.name.toLowerCase().includes(searchQuery.toLowerCase()) && !app.desc.toLowerCase().includes(searchQuery.toLowerCase())) return false;
             if(storeTab === 'banks') return app.category === 'bank';
             if(storeTab === 'vpn') return app.category === 'vpn' || app.id === 'vpnhost';
@@ -414,10 +548,8 @@
     window.tetrisMove=(dx)=>moveTetrisPiece(dx,0); window.tetrisRotate=()=>rotateTetris(); window.tetrisDrop=()=>{ while(moveTetrisPiece(0,1)){} mergeTetrisPiece(); clearLinesTetris(); spawnTetrisPiece(); drawTetris(); };
     
     function renderSnake(){ screenDiv.innerHTML=`<div class="app-view"><div class="app-header"><button class="back-btn" onclick="animateAndGoBack()">←</button><h3>Змейка</h3></div><canvas id="snakeCanvas" width="300" height="300" style="background:#000;display:block;margin:0 auto;border-radius:12px;"></canvas><div style="display:flex;justify-content:center;gap:15px;margin-top:15px;"><button class="game-btn" style="background:#3a3f46;padding:10px 20px;border-radius:30px;" onclick="snakeDir('up')">▲</button><button class="game-btn" style="background:#3a3f46;padding:10px 20px;border-radius:30px;" onclick="snakeDir('left')">◀</button><button class="game-btn" style="background:#3a3f46;padding:10px 20px;border-radius:30px;" onclick="snakeDir('down')">▼</button><button class="game-btn" style="background:#3a3f46;padding:10px 20px;border-radius:30px;" onclick="snakeDir('right')">▶</button></div><p id="snakeScoreDisplay" style="text-align:center;margin-top:8px;">Score: 0</p><button class="install-btn" style="width:100%;margin-top:8px;" onclick="initSnake()">Новая игра</button></div>`; initSnake(); }
-    let snake,snakeDirState,snakeFood,snakeScoreVal,snakeGameInterval;
-    function initSnake(){ snake=[[7,7],[6,7],[5,7]]; snakeDirState='right'; snakeScoreVal=0; updateSnakeScoreDisplay(); spawnSnakeFood(); if(snakeGameInterval) clearInterval(snakeGameInterval); snakeGameInterval=setInterval(moveSnakeGame,150); drawSnakeGame(); }
-    function spawnSnakeFood(){ let newFood; do{ newFood=[Math.floor(Math.random()*20),Math.floor(Math.random()*20)]; }while(snake.some(s=>s[0]===newFood[0]&&s[1]===newFood[1])); snakeFood=newFood; }
-    function moveSnakeGame(){ let newHead=[...snake[0]]; if(snakeDirState==='right')newHead[1]++; if(snakeDirState==='left')newHead[1]--; if(snakeDirState==='up')newHead[0]--; if(snakeDirState==='down')newHead[0]++; if(newHead[0]<0||newHead[0]>=20||newHead[1]<0||newHead[1]>=20||snake.some(s=>s[0]===newHead[0]&&s[1]===newHead[1])){ clearInterval(snakeGameInterval); alert('Game Over!'); return; } snake.unshift(newHead); if(newHead[0]===snakeFood[0]&&newHead[1]===snakeFood[1]){ snakeScoreVal+=10; updateSnakeScoreDisplay(); spawnSnakeFood(); }else snake.pop(); drawSnakeGame(); }
+    let snake,snakeDirState,snakeFood,snakeScoreVal,snakeGameInterval; 
+    function initSnake(){ snake=[[7,7],[6,7],[5,7]]; snakeDirState='right'; snakeScoreVal=0; updateSnakeScoreDisplay(); spawnSnakeFood(); if(snakeGameInterval) clearInterval(snakeGameInterval); snakeGameInterval=setInterval(moveSnakeGame(){ let newHead=[...snake[0]]; if(snakeDirState==='right')newHead[1]++; if(snakeDirState==='left')newHead[1]--; if(snakeDirState==='up')newHead[0]--; if(snakeDirState==='down')newHead[0]++; if(newHead[0]<0||newHead[0]>=20||newHead[1]<0||newHead[1]>=20||snake.some(s=>s[0]===newHead[0]&&s[1]===newHead[1])){ clearInterval(snakeGameInterval); alert('Game Over!'); return; } snake.unshift(newHead); if(newHead[0]===snakeFood[0]&&newHead[1]===snakeFood[1]){ snakeScoreVal+=10; updateSnakeScoreDisplay(); spawnSnakeFood(); }else snake.pop(); drawSnakeGame(); }
     function updateSnakeScoreDisplay(){ const s=document.getElementById('snakeScoreDisplay'); if(s) s.innerText=`Score: ${snakeScoreVal}`; }
     function drawSnakeGame(){ const c=document.getElementById('snakeCanvas'); if(!c) return; const ctx=c.getContext('2d'); ctx.fillStyle='#000'; ctx.fillRect(0,0,300,300); ctx.fillStyle='#4c9aff'; snake.forEach(s=>ctx.fillRect(s[1]*15,s[0]*15,13,13)); ctx.fillStyle='#ff3b30'; ctx.fillRect(snakeFood[1]*15,snakeFood[0]*15,13,13); }
     window.snakeDir=d=>{ if((d==='right'&&snakeDirState!=='left')||(d==='left'&&snakeDirState!=='right')||(d==='up'&&snakeDirState!=='down')||(d==='down'&&snakeDirState!=='up')) snakeDirState=d; };
